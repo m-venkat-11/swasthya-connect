@@ -18,12 +18,12 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <Header />
       <NavigationDock />
       
-      {/* Main Content Area with Desktop Side Clearance & Mobile Bottom Clearance */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 pt-6 pb-24 lg:pb-12 lg:pl-72 transition-all">
+      {/* Main Content Area aligned directly with the desktop sidebar and mobile dock */}
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 lg:pl-[20.5rem] lg:pr-8 pt-6 pb-24 lg:pb-12 transition-all">
         {children}
       </main>
 
-      <div className="lg:pl-72">
+      <div className="w-full max-w-[1440px] mx-auto px-4 lg:pl-[20.5rem] lg:pr-8">
         <Footer />
       </div>
     </div>
