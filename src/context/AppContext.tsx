@@ -81,7 +81,7 @@ const STORAGE_KEY_USER_PROFILE = 'swasthya_user_medical_profile';
 const STORAGE_KEY_ADMIN_AUTH = 'swasthya_admin_unlocked';
 const STORAGE_KEY_SIDEBAR = 'swasthya_sidebar_expanded';
 
-const ADMIN_PIN = 'sih2026';
+const ADMIN_PIN = import.meta.env.VITE_ADMIN_PASSCODE || 'sih2026';
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -462,7 +462,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const unlockAdmin = (pin: string): boolean => {
-    if (pin.trim() === ADMIN_PIN || pin.trim() === 'swasthya123') {
+    if (pin.trim() === ADMIN_PIN) {
       setIsAdminUnlocked(true);
       localStorage.setItem(STORAGE_KEY_ADMIN_AUTH, 'true');
       return true;
