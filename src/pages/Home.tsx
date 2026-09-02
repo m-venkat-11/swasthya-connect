@@ -15,8 +15,12 @@ import {
   Mic, 
   ArrowRight,
   HeartPulse,
-  Lock,
-  Heart
+  Heart,
+  Building2,
+  Calendar,
+  FileText,
+  Clock,
+  HelpCircle
 } from 'lucide-react';
 import { VoiceAssistantModal } from '../components/VoiceAssistantModal';
 
@@ -27,6 +31,8 @@ export const Home: React.FC = () => {
     isLiveGpsActive, 
     userProfile, 
     setSelectedNeed, 
+    requireAuthentication,
+    openVoiceAssistant,
     t 
   } = useApp();
 
@@ -116,6 +122,11 @@ export const Home: React.FC = () => {
     navigate('/results');
   };
 
+  const handleTalkToDoctor = () => {
+    // 104 National Health Telemedicine consultation line
+    window.location.href = "tel:104";
+  };
+
   return (
     <div className="space-y-7 pb-12">
       
@@ -155,13 +166,191 @@ export const Home: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setIsVoiceOpen(true)}
+              onClick={() => openVoiceAssistant()}
               className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1.5 shadow-sm ml-auto"
             >
               <Mic className="w-3.5 h-3.5" />
               <span>Voice</span>
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* PRIMARY "HOW CAN WE HELP YOU TODAY?" GETTING HELP FIRST ACTION HUB */}
+      {/* ========================================================================= */}
+      <section className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[10px] sm:text-xs font-black text-teal-800 uppercase tracking-widest block">
+              PATIENT ACCESS & FIRST-RESPONSE
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+              How can we help you today?
+            </h2>
+          </div>
+
+          <button
+            onClick={() => openVoiceAssistant()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs border border-amber-300 shadow-2xs transition-colors"
+          >
+            <Mic className="w-3.5 h-3.5 text-amber-700" />
+            <span>Speak in Telugu / Hindi / EN</span>
+          </button>
+        </div>
+
+        {/* 8 Intuitive Healthcare Assistance Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          
+          {/* 1. I Don't Feel Well */}
+          <button
+            onClick={() => navigate('/screening')}
+            className="p-4 rounded-2xl bg-white hover:bg-rose-50/60 border border-slate-200/90 hover:border-rose-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <HeartPulse className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-rose-950">
+                I Don't Feel Well
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Symptom triaging & right care tier
+              </p>
+            </div>
+          </button>
+
+          {/* 2. Find a Hospital */}
+          <button
+            onClick={() => navigate('/services')}
+            className="p-4 rounded-2xl bg-white hover:bg-teal-50/60 border border-slate-200/90 hover:border-teal-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Building2 className="w-5 h-5 text-teal-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-teal-950">
+                Find a Hospital
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Nearby PHC, CHC & Civil Hospitals
+              </p>
+            </div>
+          </button>
+
+          {/* 3. Book an Appointment */}
+          <button
+            onClick={() => {
+              requireAuthentication("BOOK_APPOINTMENT", () => {
+                navigate('/profile');
+              });
+            }}
+            className="p-4 rounded-2xl bg-white hover:bg-blue-50/60 border border-slate-200/90 hover:border-blue-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Calendar className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-blue-950">
+                Book Appointment
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                OPD, ANC & Doctor consultations
+              </p>
+            </div>
+          </button>
+
+          {/* 4. Talk to a Doctor */}
+          <button
+            onClick={handleTalkToDoctor}
+            className="p-4 rounded-2xl bg-white hover:bg-emerald-50/60 border border-slate-200/90 hover:border-emerald-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Stethoscope className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-emerald-950 flex items-center gap-1">
+                <span>Talk to a Doctor</span>
+                <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 rounded">104</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Free government telemedicine advice
+              </p>
+            </div>
+          </button>
+
+          {/* 5. My Referral */}
+          <button
+            onClick={() => navigate('/profile')}
+            className="p-4 rounded-2xl bg-white hover:bg-amber-50/60 border border-slate-200/90 hover:border-amber-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <FileText className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-amber-950">
+                My Referral
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Track primary to district transfers
+              </p>
+            </div>
+          </button>
+
+          {/* 6. My Follow-Up */}
+          <button
+            onClick={() => navigate('/profile')}
+            className="p-4 rounded-2xl bg-white hover:bg-purple-50/60 border border-slate-200/90 hover:border-purple-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Clock className="w-5 h-5 text-purple-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-purple-950">
+                My Follow-Up
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Maternal ANC & vaccine reminders
+              </p>
+            </div>
+          </button>
+
+          {/* 7. Ask by Voice */}
+          <button
+            onClick={() => openVoiceAssistant()}
+            className="p-4 rounded-2xl bg-white hover:bg-yellow-50/60 border border-slate-200/90 hover:border-yellow-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Mic className="w-5 h-5 text-yellow-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-yellow-950 flex items-center gap-1">
+                <span>🎙 Ask by Voice</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Speech-guided triage in Telugu/EN
+              </p>
+            </div>
+          </button>
+
+          {/* 8. I'm Not Sure What I Need */}
+          <button
+            onClick={() => navigate('/services')}
+            className="p-4 rounded-2xl bg-white hover:bg-indigo-50/60 border border-slate-200/90 hover:border-indigo-300 transition-all text-left shadow-soft hover:shadow-card group tap-target flex flex-col justify-between min-h-[120px]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <HelpCircle className="w-5 h-5 text-indigo-700" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 group-hover:text-indigo-950">
+                I'm Not Sure
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Browse by clinical symptoms
+              </p>
+            </div>
+          </button>
+
         </div>
       </section>
 
@@ -237,139 +426,86 @@ export const Home: React.FC = () => {
             <div className="text-xs font-bold text-teal-700 uppercase tracking-wider">
               Step 1 of 3
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              What Healthcare Do You Need?
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+              {t('step1Title')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Select your medical requirement. The system will calculate which government hospital actually has the right doctors and equipment.
+              {t('step1Subtitle')}
             </p>
           </div>
 
-          <button
-            onClick={() => setIsVoiceOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-800 hover:text-teal-900 bg-teal-50 px-3.5 py-2 rounded-xl border border-teal-200 self-start sm:self-auto shadow-2xs"
-          >
-            <Mic className="w-3.5 h-3.5 text-teal-700" />
-            <span>Speak in Marathi / Telugu / English</span>
-          </button>
+          <div className="text-xs text-slate-500 font-medium">
+            Verified Public Facilities: <span className="font-bold text-teal-800">4,720+</span>
+          </div>
         </div>
 
-        {/* Needs Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
           {healthNeeds.map((need) => (
             <button
               key={need.id}
               onClick={() => handleSelectNeed(need.id)}
-              className={`group text-left p-5 rounded-2xl border-2 transition-all duration-200 bg-white hover:shadow-card hover:-translate-y-0.5 flex flex-col justify-between min-h-[160px] tap-target ${need.colorTheme}`}
-              aria-label={`Select ${t(need.titleKey)}`}
+              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all hover:shadow-card hover:-translate-y-0.5 flex flex-col justify-between min-h-[140px] tap-target bg-gradient-to-br ${need.colorTheme}`}
             >
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 group-hover:bg-white flex items-center justify-center shadow-xs transition-colors">
-                    {getNeedIcon(need.iconName)}
-                  </div>
-                  {need.urgency === 'critical' && (
-                    <span className="text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-0.5 rounded-full animate-pulse">
-                      Urgent 24x7
-                    </span>
-                  )}
-                  {need.urgency === 'high' && (
-                    <span className="text-[10px] font-bold uppercase bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">
-                      Priority Care
-                    </span>
-                  )}
+                <div className="w-12 h-12 rounded-xl bg-white/80 shadow-xs flex items-center justify-center">
+                  {getNeedIcon(need.iconName)}
                 </div>
-
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-teal-900 transition-colors">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900">
                     {t(need.titleKey)}
                   </h3>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-slate-600 line-clamp-2 mt-0.5">
                     {t(need.descKey)}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-between text-xs font-bold text-teal-800 group-hover:text-teal-900">
-                <span>Find Equipped Facilities</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <div className="mt-3 flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>View Facilities</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </button>
           ))}
         </div>
       </section>
 
-      {/* Trust & Rural Relevance Stats Bar */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-x-0 md:divide-x divide-slate-100">
-          <div className="p-2 space-y-1">
-            <span className="text-2xl sm:text-3xl font-black text-teal-800 block">955+</span>
-            <span className="text-xs font-semibold text-slate-600">Verified Facilities</span>
+      {/* Priority Rural Districts Focus Banner */}
+      <section className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-soft space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <div className="text-xs text-teal-400 font-bold uppercase tracking-wider">
+              Rural & Underserved Focus
+            </div>
+            <h3 className="text-lg font-bold">
+              Demonstrating Remote Agency & Tribal Districts
+            </h3>
           </div>
-          <div className="p-2 space-y-1">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-700 block">100%</span>
-            <span className="text-xs font-semibold text-slate-600">Free Public Consultation</span>
-          </div>
-          <div className="p-2 space-y-1">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 block">62</span>
-            <span className="text-xs font-semibold text-slate-600">Districts (MH & AP)</span>
-          </div>
-          <div className="p-2 space-y-1">
-            <span className="text-2xl sm:text-3xl font-black text-rose-600 block">24x7</span>
-            <span className="text-xs font-semibold text-slate-600">Emergency & Ambulance</span>
-          </div>
-        </div>
-      </section>
 
-      {/* Future Pitch Vision Roadmap */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-            Future Health Vision Roadmap (SIH Prototype Stage)
-          </h3>
-          <span className="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
-            Roadmap Preview
-          </span>
+          <button
+            onClick={() => navigate('/location')}
+            className="text-xs text-teal-300 hover:text-white font-bold flex items-center gap-1"
+          >
+            <span>Change Active District</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
-            <div className="space-y-1">
-              <div className="font-bold text-slate-700 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('teleconsultBadge')}</span>
-              </div>
-              <p className="text-[11px] text-slate-600">eSanjeevani rural video consults with city specialists</p>
-            </div>
-            <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
-              {t('comingSoon')}
-            </span>
-          </div>
+        <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+          SwasthyaConnect prioritizes public healthcare facilities across remote tribal belts in Maharashtra (Gadchiroli, Nandurbar, Palghar) and Andhra Pradesh (Alluri Sitharama Raju, Parvathipuram Manyam) where tertiary private hospitals do not exist.
+        </p>
 
-          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
-            <div className="space-y-1">
-              <div className="font-bold text-slate-700 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('schemeCheckerBadge')}</span>
-              </div>
-              <p className="text-[11px] text-slate-600">Instant eligibility check for MPJAY & PMJAY</p>
-            </div>
-            <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
-              {t('comingSoon')}
-            </span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-xs">
+            <span className="font-bold text-teal-400 block">Gadchiroli Agency</span>
+            <span className="text-slate-300">Forest tribal belt, sub-centres & river-crossing CHC network</span>
           </div>
-
-          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
-            <div className="space-y-1">
-              <div className="font-bold text-slate-700 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('medicineStockBadge')}</span>
-              </div>
-              <p className="text-[11px] text-slate-600">Live dispensary drug availability and stock counts</p>
-            </div>
-            <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
-              {t('comingSoon')}
-            </span>
+          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-xs">
+            <span className="font-bold text-teal-400 block">Nandurbar Satpura</span>
+            <span className="text-slate-300">Hilly mountain clusters with dedicated maternal emergency response</span>
+          </div>
+          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-xs">
+            <span className="font-bold text-teal-400 block">Alluri Sitharama Raju</span>
+            <span className="text-slate-300">Agency tribal tracts with high institutional delivery focus</span>
           </div>
         </div>
       </section>

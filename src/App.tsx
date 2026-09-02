@@ -4,6 +4,8 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { NavigationDock } from './components/NavigationDock';
+import { AuthModal } from './components/AuthModal';
+import { VoiceAssistantModal } from './components/VoiceAssistantModal';
 import { Home } from './pages/Home';
 import { LocationStep } from './pages/LocationStep';
 import { RecommendedFacilities } from './pages/RecommendedFacilities';
@@ -12,20 +14,17 @@ import { EmergencyMode } from './pages/EmergencyMode';
 import { AdminPortal } from './pages/AdminPortal';
 import { ServiceSearch } from './pages/ServiceSearch';
 import { MedicalCardPage } from './pages/MedicalCardPage';
+import { SymptomScreeningPage } from './pages/SymptomScreeningPage';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSidebarExpanded } = useApp();
+  const { isSidebarExpanded, isVoiceAssistantOpen, closeVoiceAssistant } = useApp();
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-slate-100/60 to-slate-100 text-slate-900 font-sans antialiased">
       <Header />
       <NavigationDock />
       
-      {/* 
-        Dynamic Main Content Container:
-        - When sidebar is expanded: gives lg:pl-[20.5rem] (328px) so sidebar NEVER overlaps or covers content!
-        - When sidebar is collapsed: gives lg:pl-28 (112px) for maximum full-tab width!
-      */}
+      {/* Dynamic Main Content Container with zero sidebar overlap */}
       <main className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24 lg:pb-12 transition-all duration-300 ease-in-out ${
         isSidebarExpanded ? 'lg:pl-[20.5rem] lg:pr-6' : 'lg:pl-28 lg:pr-6'
       }`}>
@@ -37,6 +36,12 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       }`}>
         <Footer />
       </div>
+
+      {/* Global Just-In-Time Mobile OTP Modal */}
+      <AuthModal />
+
+      {/* Global Voice-Controlled Healthcare Guide */}
+      <VoiceAssistantModal isOpen={isVoiceAssistantOpen} onClose={closeVoiceAssistant} />
     </div>
   );
 };
@@ -53,6 +58,7 @@ export const App: React.FC = () => {
             <Route path="/results" element={<RecommendedFacilities />} />
             <Route path="/facility/:id" element={<FacilityDetail />} />
             <Route path="/emergency" element={<EmergencyMode />} />
+            <Route path="/screening" element={<SymptomScreeningPage />} />
             <Route path="/admin" element={<AdminPortal />} />
             <Route path="/profile" element={<MedicalCardPage />} />
             <Route path="/medical-card" element={<Navigate to="/profile" replace />} />

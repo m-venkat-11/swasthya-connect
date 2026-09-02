@@ -1,8 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { Facility, HealthNeedType, LanguageCode, UserMedicalProfile, ImportResult } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import type { 
+  Facility, 
+  HealthNeedType, 
+  LanguageCode, 
+  UserMedicalProfile, 
+  ImportResult,
+  UserAuth,
+  MedicalAppointment,
+  ReferralRecord,
+  FollowUpItem
+} from '../types';
 import seedData from '../data/facilities_seed.json';
 import { TRANSLATIONS } from '../data/translations';
 import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
+import { authService } from '../services/authService';
+import { persistenceService } from '../services/persistenceService';
 
 interface AppContextType {
   language: LanguageCode;
@@ -34,6 +46,28 @@ interface AppContextType {
   lockAdmin: () => void;
   importFacilitiesData: (newFacilities: Facility[]) => ImportResult;
   allAvailableStates: string[];
+
+  // Just-In-Time Authentication
+  user: UserAuth | null;
+  isAuthenticated: boolean;
+  isAuthModalOpen: boolean;
+  authActionDescription: string;
+  requireAuthentication: (actionDesc: string, onVerified: () => void) => void;
+  loginWithOtp: (otp: string, phone: string) => Promise<boolean>;
+  logout: () => void;
+  closeAuthModal: () => void;
+
+  // Persistent Cloud & Local Records
+  appointments: MedicalAppointment[];
+  referrals: ReferralRecord[];
+  followUps: FollowUpItem[];
+  bookAppointment: (appointment: Omit<MedicalAppointment, 'id'>) => Promise<MedicalAppointment>;
+  cancelAppointment: (id: string) => void;
+
+  // Voice Assistant Global State
+  isVoiceAssistantOpen: boolean;
+  openVoiceAssistant: () => void;
+  closeVoiceAssistant: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -203,7 +237,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sidebar expanded state synchronized across app
   const [isSidebarExpanded, setIsSidebarExpandedState] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_SIDEBAR);
-    return saved !== null ? saved === 'true' : false; // Default collapsed for maximum full-tab width!
+    return saved !== null ? saved === 'true' : false;
   });
 
   const setIsSidebarExpanded = (expanded: boolean) => {
@@ -226,7 +260,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(STORAGE_KEY_USER_PROFILE);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure sub-arrays exist if older profile was saved
         return {
           ...DEFAULT_INITIAL_PROFILE,
           ...parsed,
@@ -242,7 +275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  // Load facilities with localStorage overrides + custom imported facilities
+  // Load facilities
   const [facilities, setFacilities] = useState<Facility[]>(() => {
     let baseList = seedData as Facility[];
     try {
@@ -265,7 +298,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const allAvailableStates = Array.from(new Set(facilities.map(f => f.state))).sort();
 
-  // Auto-Geolocation on initial website load
+  // =========================================================================
+  // JUST-IN-TIME AUTHENTICATION & MOBILE OTP
+  // =========================================================================
+  const [user, setUser] = useState<UserAuth | null>(() => authService.getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authActionDescription, setAuthActionDescription] = useState<string>('');
+  const pendingAuthActionRef = useRef<(() => void) | null>(null);
+
+  const requireAuthentication = (actionDesc: string, onVerified: () => void) => {
+    if (user) {
+      onVerified();
+    } else {
+      setAuthActionDescription(actionDesc);
+      pendingAuthActionRef.current = onVerified;
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const loginWithOtp = async (otp: string, phone: string): Promise<boolean> => {
+    const res = await authService.verifyOtp(otp, phone);
+    if (res.success && res.user) {
+      setUser(res.user);
+      setIsAuthModalOpen(false);
+      // Run the queued pending action seamlessly!
+      if (pendingAuthActionRef.current) {
+        pendingAuthActionRef.current();
+        pendingAuthActionRef.current = null;
+      }
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    authService.signOut();
+    setUser(null);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    pendingAuthActionRef.current = null;
+  };
+
+  // =========================================================================
+  // PERSISTENT RECORDS: APPOINTMENTS, REFERRALS, FOLLOW-UPS
+  // =========================================================================
+  const [appointments, setAppointments] = useState<MedicalAppointment[]>(() => {
+    const local = persistenceService.getLocalAppointments();
+    return local.length > 0 ? local : (DEFAULT_INITIAL_PROFILE.appointments || []);
+  });
+
+  const [referrals] = useState<ReferralRecord[]>(() => {
+    return persistenceService.getLocalReferrals();
+  });
+
+  const [followUps] = useState<FollowUpItem[]>(() => {
+    return persistenceService.getLocalFollowUps();
+  });
+
+  const bookAppointment = async (appointmentData: Omit<MedicalAppointment, 'id'>): Promise<MedicalAppointment> => {
+    const newApt: MedicalAppointment = {
+      ...appointmentData,
+      id: `apt-${Date.now()}`,
+      userId: user?.uid || 'guest',
+      createdAt: new Date().toISOString()
+    };
+    const saved = await persistenceService.saveAppointment(newApt, user?.uid);
+    setAppointments(prev => [saved, ...prev]);
+    return saved;
+  };
+
+  const cancelAppointment = (id: string) => {
+    const updated = appointments.filter(a => a.id !== id);
+    setAppointments(updated);
+    localStorage.setItem('swasthya_user_appointments', JSON.stringify(updated));
+  };
+
+  // =========================================================================
+  // VOICE ASSISTANT GLOBAL MODAL STATE
+  // =========================================================================
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState<boolean>(false);
+  const openVoiceAssistant = () => setIsVoiceAssistantOpen(true);
+  const closeVoiceAssistant = () => setIsVoiceAssistantOpen(false);
+
+  // Auto-Geolocation
   const autoDetectLocation = useCallback(() => {
     if (!navigator.geolocation) return;
 
@@ -476,7 +593,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unlockAdmin,
         lockAdmin,
         importFacilitiesData,
-        allAvailableStates
+        allAvailableStates,
+        // Just-in-time auth
+        user,
+        isAuthenticated: Boolean(user),
+        isAuthModalOpen,
+        authActionDescription,
+        requireAuthentication,
+        loginWithOtp,
+        logout,
+        closeAuthModal,
+        // Records
+        appointments,
+        referrals,
+        followUps,
+        bookAppointment,
+        cancelAppointment,
+        // Voice
+        isVoiceAssistantOpen,
+        openVoiceAssistant,
+        closeVoiceAssistant
       }}
     >
       {children}

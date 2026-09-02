@@ -88,6 +88,8 @@ export interface MedicalAppointment {
   time: string;
   status: 'upcoming' | 'completed' | 'cancelled';
   notes?: string;
+  userId?: string;
+  createdAt?: string;
 }
 
 export interface VaccinationRecord {
@@ -105,6 +107,37 @@ export interface LabReportItem {
   normalRange: string;
   testDate: string;
   status: 'Normal' | 'Attention' | 'Critical';
+}
+
+export interface ReferralRecord {
+  id: string;
+  patientName: string;
+  fromFacility: string;
+  destinationFacility: string;
+  specialty: string;
+  reason: string;
+  urgency: 'urgent' | 'routine';
+  status: 'active' | 'completed' | 'pending';
+  date: string;
+  userId?: string;
+}
+
+export interface FollowUpItem {
+  id: string;
+  patientName: string;
+  title: string;
+  facilityName: string;
+  date: string;
+  type: 'maternal' | 'chronic' | 'vaccine' | 'general';
+  status: 'pending' | 'completed';
+  notes?: string;
+}
+
+export interface UserAuth {
+  uid: string;
+  phoneNumber: string;
+  displayName?: string;
+  isAnonymous?: boolean;
 }
 
 export interface UserMedicalProfile {
@@ -125,7 +158,50 @@ export interface UserMedicalProfile {
   appointments?: MedicalAppointment[];
   vaccinations?: VaccinationRecord[];
   labReports?: LabReportItem[];
+  referrals?: ReferralRecord[];
+  followUps?: FollowUpItem[];
   lastUpdated: string;
+}
+
+export interface SymptomItem {
+  id: string;
+  labelEn: string;
+  labelTe: string;
+  labelMr: string;
+  labelHi: string;
+  category: 'respiratory' | 'fever' | 'maternal' | 'cardiac' | 'digestive' | 'trauma' | 'general';
+  isRedFlagEmergency: boolean;
+}
+
+export interface ScreeningTriageResult {
+  symptoms: string[];
+  duration: string;
+  severity: 'mild' | 'moderate' | 'emergency';
+  riskLevel: string;
+  recommendedLevel: 'Primary Health Centre (PHC)' | 'Community Health Centre (CHC)' | 'Sub-District / Civil Hospital (SDH/DH)';
+  recommendedServiceNeed: HealthNeedType;
+  adviceSummary: string;
+  isEmergency: boolean;
+}
+
+export type VoiceIntentType = 
+  | 'EMERGENCY_DISPATCH'
+  | 'SCREEN_SYMPTOMS'
+  | 'FIND_FACILITY'
+  | 'BOOK_APPOINTMENT'
+  | 'VIEW_REFERRAL'
+  | 'VIEW_FOLLOWUP'
+  | 'GENERAL_INFO'
+  | 'UNKNOWN';
+
+export interface VoiceParseResult {
+  intent: VoiceIntentType;
+  languageDetected: 'en' | 'te' | 'hi' | 'mr';
+  rawTranscript: string;
+  extractedSymptoms: string[];
+  targetRoute?: string;
+  voiceResponse: string;
+  isEmergency: boolean;
 }
 
 export interface ImportResult {

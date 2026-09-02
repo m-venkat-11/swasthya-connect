@@ -14,14 +14,25 @@ import {
   Navigation, 
   Clock,
   Copy,
-  Check
+  Check,
+  Calendar,
+  X,
+  Sparkles
 } from 'lucide-react';
 
 export const FacilityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { facilities, selectedNeed, t } = useApp();
+  const { facilities, selectedNeed, requireAuthentication, bookAppointment, userProfile, t } = useApp();
   const [copied, setCopied] = useState(false);
+
+  // Appointment Modal state
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [patientName, setPatientName] = useState(userProfile?.name || 'Self');
+  const [appointmentDate, setAppointmentDate] = useState('2026-09-08');
+  const [appointmentTime, setAppointmentTime] = useState('10:00 AM');
+  const [reason, setReason] = useState('General Consultation & Health Check');
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const facility = facilities.find(f => f.id === id);
 
@@ -51,6 +62,31 @@ export const FacilityDetail: React.FC = () => {
     navigator.clipboard.writeText(facility.phone);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenBooking = () => {
+    requireAuthentication(`To book and permanently record an appointment at ${facility.name}:`, () => {
+      setIsBookingOpen(true);
+    });
+  };
+
+  const handleConfirmBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await bookAppointment({
+      title: `${facility.name} — ${reason}`,
+      facilityName: facility.name,
+      doctorName: facility.contact_person || 'Medical Officer on Duty',
+      date: appointmentDate,
+      time: appointmentTime,
+      status: 'upcoming',
+      notes: `Patient: ${patientName}. Sector: ${facility.sector}. Verified Government Record.`
+    });
+    setBookingSuccess(true);
+    setTimeout(() => {
+      setBookingSuccess(false);
+      setIsBookingOpen(false);
+      navigate('/profile');
+    }, 1800);
   };
 
   // Wrap in recommendation structure for mini map
@@ -83,100 +119,88 @@ export const FacilityDetail: React.FC = () => {
       {/* Main Profile Card */}
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-card">
         
-        {/* Top Header Banner */}
-        <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-teal-950 text-white p-6 sm:p-8 space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
-              facility.is_govt 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' 
-                : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
-            }`}>
-              <Building2 className="w-3.5 h-3.5" />
-              {facility.is_govt ? 'Government Public Facility' : 'Empanelled Private Hospital'}
-            </span>
-
-            <span className="bg-white/10 text-teal-100 border border-white/15 px-3 py-1 rounded-full">
-              {facility.category}
-            </span>
-
-            {facility.services.includes('Emergency Care') && (
-              <span className="bg-red-500/20 text-red-200 border border-red-400/30 px-3 py-1 rounded-full font-bold">
-                24x7 Casualty & Emergency
+        {/* Header Ribbon */}
+        <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-emerald-950 p-6 sm:p-8 text-white relative">
+          <div className="space-y-3 relative z-10 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-teal-700/80 text-teal-100 text-[10px] sm:text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-teal-500/30">
+                {facility.category}
               </span>
-            )}
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
-            {facility.name}
-          </h1>
-
-          <p className="text-xs sm:text-sm text-teal-100 flex items-start sm:items-center gap-1.5 max-w-2xl">
-            <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
-            <span>{facility.address}, {facility.district}, {facility.state} — Pincode: <strong>{facility.pincode}</strong></span>
-          </p>
-        </div>
-
-        {/* Primary Action Buttons Bar */}
-        <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Direct Contact:</span>
-              <span className="text-base font-extrabold text-slate-900 font-mono">{facility.phone}</span>
+              <span className={`text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full ${
+                facility.is_govt 
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              }`}>
+                {facility.sector}
+              </span>
+              {facility.services.includes('Emergency Care') && (
+                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>24x7 Casualty & Emergency</span>
+                </span>
+              )}
             </div>
-            <button
-              onClick={handleCopyPhone}
-              className="p-2 bg-white hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 text-xs font-semibold flex items-center gap-1 shadow-xs transition-colors"
-              title="Copy phone number"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
-          </div>
 
-          <div className="flex items-center gap-2.5">
-            <a
-              href={`tel:${cleanPhone || facility.phone}`}
-              className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all tap-target shadow-md"
-              aria-label={`Direct call ${facility.name} on ${facility.phone}`}
-            >
-              <PhoneCall className="w-4 h-4 text-teal-300" />
-              <span>{t('callNow')}</span>
-            </a>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-snug">
+              {facility.name}
+            </h1>
 
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 sm:flex-none bg-teal-700 hover:bg-teal-800 active:scale-95 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all tap-target shadow-md shadow-teal-700/20"
-            >
-              <Navigation className="w-4 h-4" />
-              <span>{t('getDirections')} (Google Maps)</span>
-            </a>
+            <div className="flex items-start gap-1.5 text-xs text-teal-100/90 font-medium">
+              <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>{facility.address}, {facility.district}, {facility.state} - {facility.pincode}</span>
+            </div>
           </div>
         </div>
 
-        {/* Detail Content Grid */}
-        <div className="p-6 sm:p-8 space-y-8">
+        {/* Core Actions Bar: Call, Directions, & Book Appointment */}
+        <div className="p-6 border-b border-slate-200 bg-slate-50/70 flex flex-wrap items-center gap-3">
+          <a
+            href={`tel:${cleanPhone}`}
+            className="flex-1 sm:flex-none px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target"
+          >
+            <PhoneCall className="w-4 h-4" />
+            <span>{t('callFacility')} ({cleanPhone})</span>
+          </a>
+
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 sm:flex-none px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target"
+          >
+            <Navigation className="w-4 h-4 text-emerald-400" />
+            <span>{t('openInMaps')}</span>
+          </a>
+
+          <button
+            onClick={handleOpenBooking}
+            className="w-full sm:w-auto px-5 py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target sm:ml-auto"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Book OPD / Checkup</span>
+          </button>
+
+          <button
+            onClick={handleCopyPhone}
+            className="p-3 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center gap-1 text-xs font-bold"
+            title="Copy Phone Number"
+          >
+            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
+          </button>
+        </div>
+
+        {/* Content Details Grid */}
+        <div className="p-6 sm:p-8 space-y-7">
           
-          {/* Key Meta Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Contact Person & Institutional Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
               <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold uppercase tracking-wider">
                 <User className="w-4 h-4 text-teal-700" />
-                <span>Medical In-Charge</span>
+                <span>{t('contactPerson')}</span>
               </div>
-              <p className="font-bold text-sm text-slate-900">{facility.contact_person || "Civil Surgeon / Medical Superintendent"}</p>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold uppercase tracking-wider">
-                <Clock className="w-4 h-4 text-teal-700" />
-                <span>Operating Hours</span>
-              </div>
-              <p className="font-bold text-sm text-slate-900">
-                {facility.services.includes('Emergency Care') ? "24 Hours (Emergency & Inpatient)" : "8:00 AM – 4:00 PM (OPD)"}
-              </p>
+              <p className="font-bold text-sm text-slate-900">{facility.contact_person}</p>
             </div>
 
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
@@ -257,6 +281,103 @@ export const FacilityDetail: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Appointment Booking Modal */}
+      {isBookingOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 relative">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[10px] font-black text-teal-700 uppercase tracking-wider block">
+                  SCHEDULE CHECKUP / OPD
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  {facility.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsBookingOpen(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {bookingSuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-black text-slate-900">Appointment Confirmed!</h4>
+                <p className="text-xs text-slate-600">
+                  Successfully saved to your digital Aarogya pass and synced to cloud records.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleConfirmBooking} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase">Patient Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 uppercase">Preferred Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={appointmentDate}
+                      onChange={(e) => setAppointmentDate(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 uppercase">Time Slot</label>
+                    <select
+                      value={appointmentTime}
+                      onChange={(e) => setAppointmentTime(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50"
+                    >
+                      <option>09:30 AM (Morning OPD)</option>
+                      <option>10:30 AM (Morning OPD)</option>
+                      <option>11:30 AM (Specialist Clinic)</option>
+                      <option>02:30 PM (Afternoon ANC)</option>
+                      <option>03:30 PM (Afternoon General)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase">Reason / Health Need</label>
+                  <input
+                    type="text"
+                    required
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target uppercase tracking-wider"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Confirm Appointment Booking</span>
+                </button>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

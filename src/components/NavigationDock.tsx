@@ -15,7 +15,8 @@ import {
   ShieldCheck, 
   WifiOff,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Stethoscope
 } from 'lucide-react';
 
 export const NavigationDock: React.FC = () => {
@@ -30,6 +31,9 @@ export const NavigationDock: React.FC = () => {
     isOffline,
     isSidebarExpanded,
     toggleSidebar,
+    user,
+    logout,
+    requireAuthentication,
     t 
   } = useApp();
 
@@ -159,6 +163,23 @@ export const NavigationDock: React.FC = () => {
               <Heart className="w-5 h-5 text-rose-500 shrink-0" />
               {isSidebarExpanded && <span>{t('navProfile')}</span>}
             </Link>
+
+            {/* Symptom Screening ("I Don't Feel Well") */}
+            <Link
+              to="/screening"
+              title="Symptom Screening (I Don't Feel Well)"
+              className={`relative flex items-center ${isSidebarExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                isCurrent('/screening') 
+                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' 
+                  : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
+              }`}
+            >
+              {isCurrent('/screening') && (
+                <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
+              )}
+              <Stethoscope className="w-5 h-5 text-teal-600 shrink-0" />
+              {isSidebarExpanded && <span>Symptom Screening</span>}
+            </Link>
           </div>
 
           {/* SECTION 2: LOCATION & SERVICES */}
@@ -285,6 +306,47 @@ export const NavigationDock: React.FC = () => {
                 </span>
               )}
             </button>
+          )}
+
+          {/* Patient Profile / Auth Status Widget */}
+          {isSidebarExpanded && (
+            <div className="pt-0.5">
+              {user ? (
+                <div className="p-2.5 bg-emerald-50/90 rounded-2xl border border-emerald-200 flex items-center justify-between text-[11px]">
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wider block">
+                      VERIFIED PATIENT
+                    </span>
+                    <span className="font-bold text-slate-900 truncate block">
+                      {user.phoneNumber}
+                    </span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="text-[10px] font-black text-emerald-800 hover:text-emerald-950 underline ml-2"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-[11px]">
+                  <div>
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider block">
+                      GUEST PATIENT
+                    </span>
+                    <span className="text-slate-600 font-medium block">
+                      No login required
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => requireAuthentication("To sign in with your mobile number:", () => {})}
+                    className="text-[10px] font-black text-teal-800 bg-teal-100/90 hover:bg-teal-200 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {/* System Status Footer in Sidebar */}
