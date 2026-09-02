@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profile: each user can only read and write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Appointments: authenticated patients can manage their own appointments
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Hospital Referrals: authenticated patients and health workers can access
+    match /referrals/{referralId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Follow-up reminders
+    match /followUps/{followUpId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Deny all other unrestricted public access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
