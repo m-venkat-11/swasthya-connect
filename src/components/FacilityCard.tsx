@@ -47,6 +47,9 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
     `${facility.name}, ${facility.address}, ${facility.district}, ${facility.state}`
   )}`;
 
+  // Mobile dialer sanitized phone
+  const cleanPhone = facility.phone.replace(/[^0-9+]/g, '');
+
   return (
     <div className={`relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
       isRecommended 
@@ -185,9 +188,9 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
           {/* Action CTAs */}
           <div className="flex items-center gap-2">
             <a
-              href={`tel:${facility.phone}`}
+              href={`tel:${cleanPhone || facility.phone}`}
               className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all tap-target shadow-sm"
-              aria-label={`Call ${facility.name}`}
+              aria-label={`Call ${facility.name} on ${facility.phone}`}
             >
               <PhoneCall className="w-4 h-4 text-teal-300" />
               <span>{t('callNow')}</span>

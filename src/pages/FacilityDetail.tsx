@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { InteractiveMap } from '../components/InteractiveMap';
@@ -12,13 +12,16 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Navigation, 
-  Clock
+  Clock,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export const FacilityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { facilities, selectedNeed, t } = useApp();
+  const [copied, setCopied] = useState(false);
 
   const facility = facilities.find(f => f.id === id);
 
@@ -38,9 +41,17 @@ export const FacilityDetail: React.FC = () => {
     );
   }
 
+  const cleanPhone = facility.phone.replace(/[^0-9+]/g, '');
+
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${facility.name}, ${facility.address}, ${facility.district}, ${facility.state}`
   )}`;
+
+  const handleCopyPhone = () => {
+    navigator.clipboard.writeText(facility.phone);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Wrap in recommendation structure for mini map
   const singleRec = rankFacilitiesForNeed([facility], selectedNeed, facility.district)[0] || {
@@ -107,15 +118,26 @@ export const FacilityDetail: React.FC = () => {
 
         {/* Primary Action Buttons Bar */}
         <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Direct Contact:</span>
-            <span className="text-base font-extrabold text-slate-900 font-mono">{facility.phone}</span>
+          <div className="flex items-center gap-3">
+            <div>
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">Direct Contact:</span>
+              <span className="text-base font-extrabold text-slate-900 font-mono">{facility.phone}</span>
+            </div>
+            <button
+              onClick={handleCopyPhone}
+              className="p-2 bg-white hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 text-xs font-semibold flex items-center gap-1 shadow-xs transition-colors"
+              title="Copy phone number"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied' : 'Copy'}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2.5">
             <a
-              href={`tel:${facility.phone}`}
+              href={`tel:${cleanPhone || facility.phone}`}
               className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all tap-target shadow-md"
+              aria-label={`Direct call ${facility.name} on ${facility.phone}`}
             >
               <PhoneCall className="w-4 h-4 text-teal-300" />
               <span>{t('callNow')}</span>

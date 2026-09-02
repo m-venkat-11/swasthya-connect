@@ -15,14 +15,25 @@ import {
   Mic, 
   ArrowRight,
   HeartPulse,
-  Lock
+  Lock,
+  Heart
 } from 'lucide-react';
 import { VoiceAssistantModal } from '../components/VoiceAssistantModal';
+import { MedicalProfileModal } from '../components/MedicalProfileModal';
 
 export const Home: React.FC = () => {
-  const { selectedState, selectedDistrict, setSelectedNeed, t } = useApp();
+  const { 
+    selectedState, 
+    selectedDistrict, 
+    isLiveGpsActive, 
+    userProfile, 
+    setSelectedNeed, 
+    t 
+  } = useApp();
+
   const navigate = useNavigate();
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false);
 
   const healthNeeds: HealthNeed[] = [
     {
@@ -108,97 +119,139 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-7 pb-12">
       
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-teal-900 via-teal-800 to-teal-950 text-white rounded-3xl p-6 sm:p-10 shadow-xl overflow-hidden">
-        {/* Background decorative healthcare glow */}
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <section className="relative bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-9 shadow-xl overflow-hidden border border-teal-800/40">
+        <div className="absolute -right-20 -top-20 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10 max-w-3xl space-y-4">
-          
-          {/* Tag & Subtag */}
-          <div className="inline-flex items-center gap-2 bg-teal-700/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-teal-100 border border-teal-500/30">
+          <div className="inline-flex items-center gap-2 bg-teal-800/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-teal-100 border border-teal-500/30">
             <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
             <span>{t('subTagline')}</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white">
             {t('tagline')}
           </h1>
 
-          {/* Current Active Location Pill */}
+          {/* Location & GPS Status Bar */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-2 font-medium">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>Location: <strong>{selectedDistrict}</strong> ({selectedState})</span>
+              <span>Location: <strong className="text-white font-bold">{selectedDistrict}</strong> ({selectedState})</span>
+              {isLiveGpsActive && (
+                <span className="bg-emerald-400/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-bold border border-emerald-400/30">
+                  Live GPS
+                </span>
+              )}
             </div>
 
             <button
               onClick={() => navigate('/location')}
-              className="bg-white text-teal-900 hover:bg-teal-50 text-xs font-bold px-3 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1 shadow-sm"
+              className="bg-white text-teal-950 hover:bg-teal-50 text-xs font-bold px-3 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1 shadow-sm"
             >
-              <span>Change Location</span>
+              <span>Change</span>
               <ArrowRight className="w-3 h-3" />
             </button>
 
             <button
               onClick={() => setIsVoiceOpen(true)}
-              className="bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1.5 shadow-sm ml-auto"
+              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1.5 shadow-sm ml-auto"
             >
               <Mic className="w-3.5 h-3.5" />
-              <span>Voice Search</span>
+              <span>Voice</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* Emergency Mode Urgent Banner (1-Tap direct access) */}
-      <section className="bg-gradient-to-r from-emergency-600 to-rose-700 text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Emergency Mode Callout Banner */}
+      <section className="bg-gradient-to-r from-emergency-600 via-emergency-700 to-rose-800 text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border border-emergency-500/40">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 animate-pulse">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 animate-pulse">
             <PhoneCall className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="font-extrabold text-base sm:text-lg uppercase tracking-wide">
-              {t('emergencyModeTitle')}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-black text-base sm:text-lg uppercase tracking-wide">
+                {t('emergencyModeTitle')}
+              </h2>
+              <span className="bg-white text-emergency-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                108 / 104 / 102
+              </span>
+            </div>
             <p className="text-xs text-rose-100 mt-0.5">
-              Instant 108 Ambulance dispatch, 104 medical helpline & emergency hospital lookup.
+              1-Tap emergency dispatch & nearest 24x7 public casualty hospitals in {selectedDistrict}.
             </p>
           </div>
         </div>
 
         <button
           onClick={() => navigate('/emergency')}
-          className="w-full sm:w-auto bg-white hover:bg-rose-50 text-emergency-700 font-extrabold text-xs sm:text-sm px-5 py-3 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 tap-target shrink-0 uppercase tracking-wider"
+          className="w-full sm:w-auto bg-white hover:bg-rose-50 text-emergency-700 font-black text-xs sm:text-sm px-5 py-3 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 tap-target shrink-0 uppercase tracking-wider"
         >
           <span>Open Emergency Mode</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>
 
-      {/* SCREEN 1 CORE: Health Need Picker ("What healthcare do you need?") */}
+      {/* User Info / Personal Offline Medical Card Snapshot */}
+      <section className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+            <Heart className="w-6 h-6 text-rose-600 fill-rose-100" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                {userProfile ? `Emergency Pass: ${userProfile.name}` : t('medicalCardTitle')}
+              </h3>
+              {userProfile && (
+                <span className="bg-rose-100 text-rose-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  Blood: {userProfile.bloodGroup}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-600">
+              {userProfile 
+                ? `Kin Contact: ${userProfile.emergencyKinName || userProfile.emergencyContactName || 'Saved'} (${userProfile.emergencyKinPhone || userProfile.emergencyContactPhone}) • Offline Ready`
+                : t('noProfileYet')
+              }
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsMedicalModalOpen(true)}
+          className="w-full sm:w-auto px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 tap-target shrink-0"
+        >
+          <span>{userProfile ? 'View / Edit Health Pass' : 'Create My Health Card'}</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </section>
+
+      {/* Healthcare Need Category Picker ("What Healthcare Do You Need?") */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-slate-200 pb-3">
           <div>
             <div className="text-xs font-bold text-teal-700 uppercase tracking-wider">
               Step 1 of 3
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               What Healthcare Do You Need?
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Select your requirement below. SwasthyaConnect will evaluate which public hospital is properly equipped for this treatment.
+              Select your medical requirement. The system will calculate which government hospital actually has the right doctors and equipment.
             </p>
           </div>
 
           <button
             onClick={() => setIsVoiceOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-200 self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-800 hover:text-teal-900 bg-teal-50 px-3.5 py-2 rounded-xl border border-teal-200 self-start sm:self-auto shadow-2xs"
           >
-            <Mic className="w-3.5 h-3.5 text-teal-600" />
+            <Mic className="w-3.5 h-3.5 text-teal-700" />
             <span>Speak in Marathi / Telugu / English</span>
           </button>
         </div>
@@ -214,11 +267,11 @@ export const Home: React.FC = () => {
             >
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-slate-50 group-hover:bg-white flex items-center justify-center shadow-sm transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 group-hover:bg-white flex items-center justify-center shadow-xs transition-colors">
                     {getNeedIcon(need.iconName)}
                   </div>
                   {need.urgency === 'critical' && (
-                    <span className="text-[10px] font-extrabold uppercase bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-0.5 rounded-full animate-pulse">
                       Urgent 24x7
                     </span>
                   )}
@@ -251,44 +304,38 @@ export const Home: React.FC = () => {
       {/* Trust & Rural Relevance Stats Bar */}
       <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-x-0 md:divide-x divide-slate-100">
-          
           <div className="p-2 space-y-1">
             <span className="text-2xl sm:text-3xl font-black text-teal-800 block">955+</span>
-            <span className="text-xs font-medium text-slate-600">Verified Facilities</span>
+            <span className="text-xs font-semibold text-slate-600">Verified Facilities</span>
           </div>
-
           <div className="p-2 space-y-1">
             <span className="text-2xl sm:text-3xl font-black text-emerald-700 block">100%</span>
-            <span className="text-xs font-medium text-slate-600">Free Public Consultation</span>
+            <span className="text-xs font-semibold text-slate-600">Free Public Consultation</span>
           </div>
-
           <div className="p-2 space-y-1">
             <span className="text-2xl sm:text-3xl font-black text-slate-900 block">62</span>
-            <span className="text-xs font-medium text-slate-600">Districts (MH & AP)</span>
+            <span className="text-xs font-semibold text-slate-600">Districts (MH & AP)</span>
           </div>
-
           <div className="p-2 space-y-1">
             <span className="text-2xl sm:text-3xl font-black text-rose-600 block">24x7</span>
-            <span className="text-xs font-medium text-slate-600">Emergency & Ambulance</span>
+            <span className="text-xs font-semibold text-slate-600">Emergency & Ambulance</span>
           </div>
-
         </div>
       </section>
 
-      {/* Future Pitch Vision Modules */}
+      {/* Future Pitch Vision Roadmap */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
             Future Health Vision Roadmap (SIH Prototype Stage)
           </h3>
-          <span className="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+          <span className="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
             Roadmap Preview
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          
-          <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex items-start justify-between opacity-80">
+          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
             <div className="space-y-1">
               <div className="font-bold text-slate-700 flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
@@ -301,20 +348,20 @@ export const Home: React.FC = () => {
             </span>
           </div>
 
-          <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex items-start justify-between opacity-80">
+          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
             <div className="space-y-1">
               <div className="font-bold text-slate-700 flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
                 <span>{t('schemeCheckerBadge')}</span>
               </div>
-              <p className="text-[11px] text-slate-600">Instant cashless eligibility checker for MPJAY & PMJAY</p>
+              <p className="text-[11px] text-slate-600">Instant eligibility check for MPJAY & PMJAY</p>
             </div>
             <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
               {t('comingSoon')}
             </span>
           </div>
 
-          <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex items-start justify-between opacity-80">
+          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-3.5 flex items-start justify-between opacity-80">
             <div className="space-y-1">
               <div className="font-bold text-slate-700 flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-slate-500" />
@@ -326,12 +373,14 @@ export const Home: React.FC = () => {
               {t('comingSoon')}
             </span>
           </div>
-
         </div>
       </section>
 
       {/* Voice Assistant Modal */}
       <VoiceAssistantModal isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} />
+
+      {/* Medical Profile Modal */}
+      <MedicalProfileModal isOpen={isMedicalModalOpen} onClose={() => setIsMedicalModalOpen(false)} />
 
     </div>
   );

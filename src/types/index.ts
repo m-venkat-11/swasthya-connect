@@ -67,3 +67,28 @@ export interface Helpline {
   available: string;
   category: 'ambulance' | 'maternal' | 'health_info' | 'general_emergency';
 }
+
+export interface UserMedicalProfile {
+  name: string;
+  age: string;
+  gender: string;
+  bloodGroup: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyKinName?: string;
+  emergencyKinPhone?: string;
+  conditions: string[];
+  pregnancyTrimester?: string;
+  allergies?: string;
+  schemeCardNumber?: string;
+  pincode?: string;
+  lastUpdated: string;
+}
+
+export interface ImportResult {
+  success: boolean;
+  addedCount: number;
+  newStates: string[];
+  newDistricts: string[];
+  errors: string[];
+}
