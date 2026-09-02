@@ -410,7 +410,7 @@ export const NavigationDock: React.FC = () => {
           }`}
         >
           <MapPin className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 truncate max-w-[50px]">{selectedDistrict.split(' ')[0]}</span>
+          <span className="text-[10px] mt-0.5 font-bold">District</span>
         </Link>
 
         {/* Secret Admin / Settings Toggle */}
