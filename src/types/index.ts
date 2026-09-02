@@ -68,6 +68,45 @@ export interface Helpline {
   category: 'ambulance' | 'maternal' | 'health_info' | 'general_emergency';
 }
 
+export interface PrescriptionItem {
+  id: string;
+  medicineName: string;
+  dosage: string;
+  frequency: string;
+  prescribedBy: string;
+  startDate: string;
+  durationDays: string;
+  isActive: boolean;
+}
+
+export interface MedicalAppointment {
+  id: string;
+  title: string;
+  facilityName: string;
+  doctorName?: string;
+  date: string;
+  time: string;
+  status: 'upcoming' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+export interface VaccinationRecord {
+  id: string;
+  vaccineName: string;
+  dateGiven: string;
+  nextDueDate?: string;
+  centerName: string;
+}
+
+export interface LabReportItem {
+  id: string;
+  testName: string;
+  resultValue: string;
+  normalRange: string;
+  testDate: string;
+  status: 'Normal' | 'Attention' | 'Critical';
+}
+
 export interface UserMedicalProfile {
   name: string;
   age: string;
@@ -82,6 +121,10 @@ export interface UserMedicalProfile {
   allergies?: string;
   schemeCardNumber?: string;
   pincode?: string;
+  prescriptions?: PrescriptionItem[];
+  appointments?: MedicalAppointment[];
+  vaccinations?: VaccinationRecord[];
+  labReports?: LabReportItem[];
   lastUpdated: string;
 }
 

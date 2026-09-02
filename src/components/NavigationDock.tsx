@@ -28,6 +28,8 @@ export const NavigationDock: React.FC = () => {
     unlockAdmin, 
     lockAdmin, 
     isOffline,
+    isSidebarExpanded,
+    toggleSidebar,
     t 
   } = useApp();
 
@@ -36,9 +38,6 @@ export const NavigationDock: React.FC = () => {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState(false);
-
-  // Collapsible toggle inspired by Flowly Image 2 (compact icon rail vs expanded drawer)
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
   const isCurrent = (path: string) => location.pathname === path;
 
@@ -60,7 +59,7 @@ export const NavigationDock: React.FC = () => {
       {/* DESKTOP FROSTED DOCK (COLLAPSIBLE LIKE FLOWLY UI: THIN ICON RAIL OR FULL DRAWER) */}
       <aside 
         className={`hidden lg:flex fixed left-4 top-20 bottom-4 z-40 bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-xl transition-all duration-300 flex-col justify-between overflow-y-auto ${
-          isExpanded ? 'w-72 p-5' : 'w-20 p-3 items-center'
+          isSidebarExpanded ? 'w-72 p-5' : 'w-20 p-3 items-center'
         }`}
       >
         
@@ -68,8 +67,8 @@ export const NavigationDock: React.FC = () => {
         <div className="w-full space-y-5">
           
           {/* Header & Toggle Button (Exact Flowly Header with Arrow Button) */}
-          <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} w-full border-b border-slate-100 pb-3`}>
-            {isExpanded ? (
+          <div className={`flex items-center ${isSidebarExpanded ? 'justify-between' : 'justify-center'} w-full border-b border-slate-100 pb-3`}>
+            {isSidebarExpanded ? (
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-teal-700 via-teal-800 to-emerald-950 flex items-center justify-center text-white shadow-md shadow-teal-900/20 shrink-0">
                   <Sparkles className="w-4 h-4 text-teal-200" />
@@ -91,18 +90,18 @@ export const NavigationDock: React.FC = () => {
 
             {/* Collapse/Expand Toggle Button */}
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={toggleSidebar}
               className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-2xs"
-              title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+              title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
               aria-label="Toggle Sidebar"
             >
-              {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {isSidebarExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           </div>
 
           {/* SECTION 1: PRIMARY CARE */}
           <div className="w-full space-y-1.5">
-            {isExpanded && (
+            {isSidebarExpanded && (
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
                 PRIMARY CARE
               </div>
@@ -111,7 +110,7 @@ export const NavigationDock: React.FC = () => {
             <Link
               to="/"
               title="Home"
-              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`relative flex items-center ${isSidebarExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/') 
                   ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
@@ -121,14 +120,14 @@ export const NavigationDock: React.FC = () => {
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
               <Home className="w-5 h-5 shrink-0" />
-              {isExpanded && <span>{t('navHome')}</span>}
+              {isSidebarExpanded && <span>{t('navHome')}</span>}
             </Link>
 
             {/* Emergency 24x7 Urgent Highlight */}
             <Link
               to="/emergency"
               title="24x7 Emergency"
-              className={`relative flex items-center ${isExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-black transition-all ${
+              className={`relative flex items-center ${isSidebarExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-black transition-all ${
                 isCurrent('/emergency') 
                   ? 'bg-emergency-600 text-white shadow-md shadow-emergency-600/30' 
                   : 'bg-emergency-50/90 text-emergency-700 hover:bg-emergency-100 border border-emergency-200/80'
@@ -139,16 +138,16 @@ export const NavigationDock: React.FC = () => {
               )}
               <div className="flex items-center gap-2.5">
                 <PhoneCall className="w-5 h-5 animate-pulse shrink-0" />
-                {isExpanded && <span className="uppercase tracking-wide">{t('navEmergency')}</span>}
+                {isSidebarExpanded && <span className="uppercase tracking-wide">{t('navEmergency')}</span>}
               </div>
-              {isExpanded && <span className="w-2 h-2 rounded-full bg-emergency-500 animate-ping"></span>}
+              {isSidebarExpanded && <span className="w-2 h-2 rounded-full bg-emergency-500 animate-ping"></span>}
             </Link>
 
             {/* Medical Profile Pass Tab (REGULAR FULL-SIZED TAB) */}
             <Link
               to="/profile"
               title="My Emergency Medical Pass"
-              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`relative flex items-center ${isSidebarExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/profile') 
                   ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
@@ -158,13 +157,13 @@ export const NavigationDock: React.FC = () => {
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
               <Heart className="w-5 h-5 text-rose-500 shrink-0" />
-              {isExpanded && <span>{t('navProfile')}</span>}
+              {isSidebarExpanded && <span>{t('navProfile')}</span>}
             </Link>
           </div>
 
           {/* SECTION 2: LOCATION & SERVICES */}
           <div className="w-full space-y-1.5">
-            {isExpanded && (
+            {isSidebarExpanded && (
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
                 LOCATION & SERVICES
               </div>
@@ -173,7 +172,7 @@ export const NavigationDock: React.FC = () => {
             <Link
               to="/location"
               title={`Location: ${selectedDistrict}`}
-              className={`relative flex items-center ${isExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`relative flex items-center ${isSidebarExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/location') 
                   ? 'bg-teal-700 text-white shadow-md' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
@@ -184,9 +183,9 @@ export const NavigationDock: React.FC = () => {
               )}
               <div className="flex items-center gap-2.5 truncate">
                 <MapPin className="w-5 h-5 text-teal-600 shrink-0" />
-                {isExpanded && <span className="truncate max-w-[150px]">{selectedDistrict}</span>}
+                {isSidebarExpanded && <span className="truncate max-w-[150px]">{selectedDistrict}</span>}
               </div>
-              {isExpanded && isLiveGpsActive && (
+              {isSidebarExpanded && isLiveGpsActive && (
                 <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-black shrink-0">
                   GPS
                 </span>
@@ -196,7 +195,7 @@ export const NavigationDock: React.FC = () => {
             <Link
               to="/services"
               title="Search Healthcare Needs"
-              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`relative flex items-center ${isSidebarExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/services') 
                   ? 'bg-teal-700 text-white shadow-md' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
@@ -206,7 +205,7 @@ export const NavigationDock: React.FC = () => {
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
               <Search className="w-5 h-5 text-slate-500 shrink-0" />
-              {isExpanded && <span>{t('navNeeds')}</span>}
+              {isSidebarExpanded && <span>{t('navNeeds')}</span>}
             </Link>
           </div>
 
@@ -215,7 +214,7 @@ export const NavigationDock: React.FC = () => {
         {/* BOTTOM CONTENT GROUP: LANGUAGE & ADMIN SETTINGS */}
         <div className="w-full space-y-3 pt-3 border-t border-slate-200/70">
           
-          {isExpanded ? (
+          {isSidebarExpanded ? (
             <div className="space-y-1.5">
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
                 LANGUAGE & SETTINGS
@@ -251,16 +250,16 @@ export const NavigationDock: React.FC = () => {
 
           {/* Secret Admin Gated Button */}
           {isAdminUnlocked ? (
-            <div className={`flex items-center gap-1.5 ${isExpanded ? '' : 'justify-center'}`}>
+            <div className={`flex items-center gap-1.5 ${isSidebarExpanded ? '' : 'justify-center'}`}>
               <Link
                 to="/admin"
-                className={`flex-1 flex items-center ${isExpanded ? 'gap-2 px-3' : 'justify-center p-2'} py-2 rounded-xl bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200 hover:bg-teal-100 transition-colors`}
+                className={`flex-1 flex items-center ${isSidebarExpanded ? 'gap-2 px-3' : 'justify-center p-2'} py-2 rounded-xl bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200 hover:bg-teal-100 transition-colors`}
                 title="Admin Excel/CSV Portal"
               >
                 <Settings className="w-4 h-4 text-teal-700 shrink-0" />
-                {isExpanded && <span>Admin Excel/CSV</span>}
+                {isSidebarExpanded && <span>Admin Excel/CSV</span>}
               </Link>
-              {isExpanded && (
+              {isSidebarExpanded && (
                 <button
                   onClick={lockAdmin}
                   className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
@@ -273,14 +272,14 @@ export const NavigationDock: React.FC = () => {
           ) : (
             <button
               onClick={() => setIsPinModalOpen(true)}
-              className={`w-full flex items-center ${isExpanded ? 'justify-between px-3' : 'justify-center p-2'} py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200/70 transition-colors group`}
+              className={`w-full flex items-center ${isSidebarExpanded ? 'justify-between px-3' : 'justify-center p-2'} py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200/70 transition-colors group`}
               title="Admin Security Gate"
             >
               <span className="flex items-center gap-1.5">
                 <KeyRound className="w-4 h-4 text-slate-400 group-hover:text-teal-600 shrink-0" />
-                {isExpanded && <span>Admin Security Gate</span>}
+                {isSidebarExpanded && <span>Admin Security Gate</span>}
               </span>
-              {isExpanded && (
+              {isSidebarExpanded && (
                 <span className="text-[9px] bg-slate-200 text-slate-700 font-mono font-bold px-1.5 py-0.5 rounded">
                   PIN
                 </span>
@@ -289,7 +288,7 @@ export const NavigationDock: React.FC = () => {
           )}
 
           {/* System Status Footer in Sidebar */}
-          {isExpanded && (
+          {isSidebarExpanded && (
             <div className="p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 flex items-center justify-between text-[10px] text-slate-500 font-medium">
               <span className="flex items-center gap-1 text-emerald-700 font-bold">
                 <ShieldCheck className="w-3.5 h-3.5" />

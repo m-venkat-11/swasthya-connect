@@ -66,7 +66,6 @@ export const Header: React.FC = () => {
             <button
               onClick={handleLogoTap}
               className="relative flex items-center gap-3.5 text-left group focus:outline-none rounded-2xl p-1"
-              title="SWASTHYA CONNECT — SIH PS 26133 (Tap 5x for Secret Admin)"
               aria-label="SWASTHYA CONNECT"
             >
               {/* Luminous Glowing Brand Icon */}

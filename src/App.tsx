@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { NavigationDock } from './components/NavigationDock';
@@ -14,17 +14,27 @@ import { ServiceSearch } from './pages/ServiceSearch';
 import { MedicalCardPage } from './pages/MedicalCardPage';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isSidebarExpanded } = useApp();
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-slate-100/60 to-slate-100 text-slate-900 font-sans antialiased">
       <Header />
       <NavigationDock />
       
-      {/* Full Tab Content Container — generous padding and full natural tab width */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:pl-28 lg:pr-6 pt-6 pb-24 lg:pb-12 transition-all">
+      {/* 
+        Dynamic Main Content Container:
+        - When sidebar is expanded: gives lg:pl-[20.5rem] (328px) so sidebar NEVER overlaps or covers content!
+        - When sidebar is collapsed: gives lg:pl-28 (112px) for maximum full-tab width!
+      */}
+      <main className={`flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24 lg:pb-12 transition-all duration-300 ease-in-out ${
+        isSidebarExpanded ? 'lg:pl-[20.5rem] lg:pr-6' : 'lg:pl-28 lg:pr-6'
+      }`}>
         {children}
       </main>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:pl-28 lg:pr-6">
+      <div className={`w-full max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-300 ease-in-out ${
+        isSidebarExpanded ? 'lg:pl-[20.5rem] lg:pr-6' : 'lg:pl-28 lg:pr-6'
+      }`}>
         <Footer />
       </div>
     </div>

@@ -24,6 +24,10 @@ interface AppContextType {
   // Medical Profile
   userProfile: UserMedicalProfile | null;
   saveUserProfile: (profile: UserMedicalProfile) => void;
+  // Sidebar State (synchronized with App layout)
+  isSidebarExpanded: boolean;
+  setIsSidebarExpanded: (expanded: boolean) => void;
+  toggleSidebar: () => void;
   // Secret Admin & Data Import
   isAdminUnlocked: boolean;
   unlockAdmin: (pin: string) => boolean;
@@ -41,6 +45,7 @@ const STORAGE_KEY_DISTRICT = 'swasthya_district';
 const STORAGE_KEY_STATE = 'swasthya_state';
 const STORAGE_KEY_USER_PROFILE = 'swasthya_user_medical_profile';
 const STORAGE_KEY_ADMIN_AUTH = 'swasthya_admin_unlocked';
+const STORAGE_KEY_SIDEBAR = 'swasthya_sidebar_expanded';
 
 const ADMIN_PIN = 'sih2026';
 
@@ -54,6 +59,128 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
+
+// Default initial sample profile with prescriptions & appointments
+const DEFAULT_INITIAL_PROFILE: UserMedicalProfile = {
+  name: "Savita Ramesh Shinde",
+  age: "26",
+  gender: "Female",
+  bloodGroup: "O+",
+  emergencyContactName: "Ramesh Shinde (Husband)",
+  emergencyContactPhone: "9822123456",
+  emergencyKinName: "Ramesh Shinde (Husband)",
+  emergencyKinPhone: "9822123456",
+  conditions: ["Pregnancy", "Mild Anemia"],
+  pregnancyTrimester: "3rd Trimester (Months 7-9, Near Delivery)",
+  allergies: "None / No known drug allergies",
+  schemeCardNumber: "PMJAY-MH-84920194",
+  pincode: "442605",
+  lastUpdated: new Date().toISOString().split('T')[0],
+  prescriptions: [
+    {
+      id: "rx-1",
+      medicineName: "Iron & Folic Acid Tablets (IFA)",
+      dosage: "100mg elemental iron + 500mcg folic acid",
+      frequency: "1 tablet once daily after lunch",
+      prescribedBy: "Dr. A. K. Sharma (District Civil Hospital)",
+      startDate: "2026-08-15",
+      durationDays: "90 Days",
+      isActive: true
+    },
+    {
+      id: "rx-2",
+      medicineName: "Calcium Carbonate + Vitamin D3",
+      dosage: "500mg calcium",
+      frequency: "1 tablet twice daily after meals",
+      prescribedBy: "Medical Officer, PHC Kurkheda",
+      startDate: "2026-08-20",
+      durationDays: "60 Days",
+      isActive: true
+    },
+    {
+      id: "rx-3",
+      medicineName: "Paracetamol 500mg (SOS for fever)",
+      dosage: "500mg",
+      frequency: "Only if fever > 100°F (Max 3 times daily)",
+      prescribedBy: "Medical Officer, PHC Kurkheda",
+      startDate: "2026-08-20",
+      durationDays: "As needed",
+      isActive: false
+    }
+  ],
+  appointments: [
+    {
+      id: "apt-1",
+      title: "Antenatal Checkup #4 (36-Week Ultrasound & Delivery Plan)",
+      facilityName: "Sub-District Hospital / Civil Hospital",
+      doctorName: "Dr. Sneha Deshmukh (Gynecologist)",
+      date: "2026-09-10",
+      time: "10:30 AM",
+      status: "upcoming",
+      notes: "Carry previous sonography reports and maternal MCP card"
+    },
+    {
+      id: "apt-2",
+      title: "ASHA Worker Home Visit & Nutrition Counseling",
+      facilityName: "Sub-Centre / Anganwadi",
+      doctorName: "Meena Tai (ASHA Facilitator)",
+      date: "2026-09-05",
+      time: "02:00 PM",
+      status: "upcoming",
+      notes: "Janani Suraksha Yojana (JSY) direct benefit transfer form verification"
+    },
+    {
+      id: "apt-3",
+      title: "Routine Blood Glucose & Hb Screening (Completed)",
+      facilityName: "Primary Health Centre (PHC)",
+      doctorName: "Lab Technician Rahul",
+      date: "2026-08-18",
+      time: "09:00 AM",
+      status: "completed",
+      notes: "Hb report: 11.2 g/dL. Blood pressure: 118/76 mmHg. Normal."
+    }
+  ],
+  vaccinations: [
+    {
+      id: "vac-1",
+      vaccineName: "Tetanus & adult Diphtheria (Td 1)",
+      dateGiven: "2026-03-12",
+      centerName: "PHC Health Sub-Centre"
+    },
+    {
+      id: "vac-2",
+      vaccineName: "Tetanus & adult Diphtheria (Td 2 / Booster)",
+      dateGiven: "2026-04-15",
+      centerName: "Sub-District Hospital"
+    }
+  ],
+  labReports: [
+    {
+      id: "lab-1",
+      testName: "Hemoglobin (Hb)",
+      resultValue: "11.2 g/dL",
+      normalRange: "11.0 - 15.0 g/dL",
+      testDate: "2026-08-18",
+      status: "Normal"
+    },
+    {
+      id: "lab-2",
+      testName: "Random Blood Sugar (RBS)",
+      resultValue: "104 mg/dL",
+      normalRange: "70 - 140 mg/dL",
+      testDate: "2026-08-18",
+      status: "Normal"
+    },
+    {
+      id: "lab-3",
+      testName: "Blood Group & Rh Typing",
+      resultValue: "O Positive (Rh+)",
+      normalRange: "Verified Record",
+      testDate: "2026-03-10",
+      status: "Normal"
+    }
+  ]
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<LanguageCode>(() => {
@@ -73,6 +200,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLiveGpsActive, setIsLiveGpsActive] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
 
+  // Sidebar expanded state synchronized across app
+  const [isSidebarExpanded, setIsSidebarExpandedState] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_SIDEBAR);
+    return saved !== null ? saved === 'true' : false; // Default collapsed for maximum full-tab width!
+  });
+
+  const setIsSidebarExpanded = (expanded: boolean) => {
+    setIsSidebarExpandedState(expanded);
+    localStorage.setItem(STORAGE_KEY_SIDEBAR, String(expanded));
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarExpanded(!isSidebarExpanded);
+  };
+
   // Secret Admin Lock state
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEY_ADMIN_AUTH) === 'true';
@@ -82,9 +224,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userProfile, setUserProfile] = useState<UserMedicalProfile | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_USER_PROFILE);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure sub-arrays exist if older profile was saved
+        return {
+          ...DEFAULT_INITIAL_PROFILE,
+          ...parsed,
+          prescriptions: parsed.prescriptions || DEFAULT_INITIAL_PROFILE.prescriptions,
+          appointments: parsed.appointments || DEFAULT_INITIAL_PROFILE.appointments,
+          vaccinations: parsed.vaccinations || DEFAULT_INITIAL_PROFILE.vaccinations,
+          labReports: parsed.labReports || DEFAULT_INITIAL_PROFILE.labReports
+        };
+      }
+      return DEFAULT_INITIAL_PROFILE;
     } catch {
-      return null;
+      return DEFAULT_INITIAL_PROFILE;
     }
   });
 
@@ -109,7 +263,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return baseList;
   });
 
-  // Available states dynamically computed from dataset
   const allAvailableStates = Array.from(new Set(facilities.map(f => f.state))).sort();
 
   // Auto-Geolocation on initial website load
@@ -122,7 +275,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUserCoords({ lat: latitude, lng: longitude });
         setIsLiveGpsActive(true);
 
-        // Find closest district in our coordinates dataset
         let closestDistrict = '';
         let closestDistance = Infinity;
         let matchedState = '';
@@ -136,7 +288,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        // If reasonably close (< 250km from a known district center), auto-select it
         if (closestDistrict && closestDistance < 250) {
           setSelectedDistrictState(closestDistrict);
           setSelectedStateState(matchedState);
@@ -145,7 +296,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       },
       (err) => {
-        console.log("GPS permission not granted or timeout; using district default:", err.message);
+        console.log("GPS not granted; using district default:", err.message);
         setIsLiveGpsActive(false);
       },
       { timeout: 8000, enableHighAccuracy: false }
@@ -156,7 +307,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     autoDetectLocation();
   }, [autoDetectLocation]);
 
-  // Offline event listeners
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -194,7 +344,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEY_USER_PROFILE, JSON.stringify(profile));
   };
 
-  // Secret Admin PIN authentication
   const unlockAdmin = (pin: string): boolean => {
     if (pin.trim() === ADMIN_PIN || pin.trim() === 'swasthya123') {
       setIsAdminUnlocked(true);
@@ -209,7 +358,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(STORAGE_KEY_ADMIN_AUTH);
   };
 
-  // Dynamic CSV/Excel Import
   const importFacilitiesData = (newFacilities: Facility[]): ImportResult => {
     if (!newFacilities || newFacilities.length === 0) {
       return { success: false, addedCount: 0, newStates: [], newDistricts: [], errors: ['No valid records found to import'] };
@@ -321,6 +469,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resetMasterData,
         userProfile,
         saveUserProfile,
+        isSidebarExpanded,
+        setIsSidebarExpanded,
+        toggleSidebar,
         isAdminUnlocked,
         unlockAdmin,
         lockAdmin,
