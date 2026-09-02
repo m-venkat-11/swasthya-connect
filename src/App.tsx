@@ -11,6 +11,7 @@ import { FacilityDetail } from './pages/FacilityDetail';
 import { EmergencyMode } from './pages/EmergencyMode';
 import { AdminPortal } from './pages/AdminPortal';
 import { ServiceSearch } from './pages/ServiceSearch';
+import { MedicalCardPage } from './pages/MedicalCardPage';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -43,6 +44,8 @@ export const App: React.FC = () => {
             <Route path="/facility/:id" element={<FacilityDetail />} />
             <Route path="/emergency" element={<EmergencyMode />} />
             <Route path="/admin" element={<AdminPortal />} />
+            <Route path="/profile" element={<MedicalCardPage />} />
+            <Route path="/medical-card" element={<Navigate to="/profile" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppLayout>

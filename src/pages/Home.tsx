@@ -19,7 +19,6 @@ import {
   Heart
 } from 'lucide-react';
 import { VoiceAssistantModal } from '../components/VoiceAssistantModal';
-import { MedicalProfileModal } from '../components/MedicalProfileModal';
 
 export const Home: React.FC = () => {
   const { 
@@ -33,7 +32,6 @@ export const Home: React.FC = () => {
 
   const navigate = useNavigate();
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
-  const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false);
 
   const healthNeeds: HealthNeed[] = [
     {
@@ -224,11 +222,11 @@ export const Home: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsMedicalModalOpen(true)}
-          className="w-full sm:w-auto px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 tap-target shrink-0"
+          onClick={() => navigate('/profile')}
+          className="w-full sm:w-auto px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target shrink-0"
         >
           <span>{userProfile ? 'View / Edit Health Pass' : 'Create My Health Card'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-4 h-4" />
         </button>
       </section>
 
@@ -378,9 +376,6 @@ export const Home: React.FC = () => {
 
       {/* Voice Assistant Modal */}
       <VoiceAssistantModal isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} />
-
-      {/* Medical Profile Modal */}
-      <MedicalProfileModal isOpen={isMedicalModalOpen} onClose={() => setIsMedicalModalOpen(false)} />
 
     </div>
   );

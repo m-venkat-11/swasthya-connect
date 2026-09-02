@@ -17,7 +17,6 @@ import {
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
-import { MedicalProfileModal } from './MedicalProfileModal';
 
 export const NavigationDock: React.FC = () => {
   const { 
@@ -34,7 +33,6 @@ export const NavigationDock: React.FC = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState(false);
@@ -91,7 +89,7 @@ export const NavigationDock: React.FC = () => {
               </div>
             )}
 
-            {/* Collapse/Expand Toggle Button (like > in Flowly design) */}
+            {/* Collapse/Expand Toggle Button */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-2xs"
@@ -146,15 +144,22 @@ export const NavigationDock: React.FC = () => {
               {isExpanded && <span className="w-2 h-2 rounded-full bg-emergency-500 animate-ping"></span>}
             </Link>
 
-            {/* Medical Profile Pass */}
-            <button
-              onClick={() => setIsProfileOpen(true)}
+            {/* Medical Profile Pass Tab (REGULAR FULL-SIZED TAB) */}
+            <Link
+              to="/profile"
               title="My Emergency Medical Pass"
-              className={`w-full flex items-center ${isExpanded ? 'gap-3 px-3.5 text-left' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold text-slate-700 hover:bg-teal-50/70 hover:text-teal-900 transition-all`}
+              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                isCurrent('/profile') 
+                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' 
+                  : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
+              }`}
             >
+              {isCurrent('/profile') && (
+                <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
+              )}
               <Heart className="w-5 h-5 text-rose-500 shrink-0" />
               {isExpanded && <span>{t('navProfile')}</span>}
-            </button>
+            </Link>
           </div>
 
           {/* SECTION 2: LOCATION & SERVICES */}
@@ -325,14 +330,16 @@ export const NavigationDock: React.FC = () => {
           <span className="text-[10px] mt-0.5 font-extrabold uppercase tracking-tight">108 Help</span>
         </Link>
 
-        {/* My Medical Card Profile */}
-        <button
-          onClick={() => setIsProfileOpen(true)}
-          className="flex flex-col items-center justify-center p-2 rounded-xl tap-target flex-1 text-slate-600 hover:text-rose-600 transition-colors"
+        {/* My Medical Card Profile (Link to full tab) */}
+        <Link
+          to="/profile"
+          className={`flex flex-col items-center justify-center p-2 rounded-xl tap-target flex-1 transition-all ${
+            isCurrent('/profile') ? 'text-teal-700 font-bold bg-teal-50/80' : 'text-slate-500'
+          }`}
         >
           <Heart className="w-5 h-5 text-rose-500" />
           <span className="text-[10px] mt-0.5">My Pass</span>
-        </button>
+        </Link>
 
         {/* Location / GPS */}
         <Link
@@ -358,9 +365,6 @@ export const NavigationDock: React.FC = () => {
         </button>
 
       </nav>
-
-      {/* MEDICAL PROFILE MODAL */}
-      <MedicalProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
 
       {/* SECRET ADMIN PIN MODAL */}
       {isPinModalOpen && (
