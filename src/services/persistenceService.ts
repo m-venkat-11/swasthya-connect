@@ -90,24 +90,7 @@ export const persistenceService = {
   getLocalReferrals(): ReferralRecord[] {
     try {
       const raw = localStorage.getItem(STORAGE_REFERRALS);
-      if (raw) return JSON.parse(raw);
-      
-      // Default sample rural referral for presentation
-      const defaultReferrals: ReferralRecord[] = [
-        {
-          id: 'ref-01',
-          patientName: 'Savita Ramesh Shinde',
-          fromFacility: 'Kurkheda Primary Health Centre (PHC)',
-          destinationFacility: 'District Civil Hospital Gadchiroli',
-          specialty: 'Obstetrics & High-Risk Maternal Delivery',
-          reason: 'Severe Anemia (Hb < 8.5) & Previous C-Section requiring Blood Bank & Surgical OT on standby',
-          urgency: 'urgent',
-          status: 'active',
-          date: '2026-08-25'
-        }
-      ];
-      localStorage.setItem(STORAGE_REFERRALS, JSON.stringify(defaultReferrals));
-      return defaultReferrals;
+      return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
     }
@@ -117,32 +100,7 @@ export const persistenceService = {
   getLocalFollowUps(): FollowUpItem[] {
     try {
       const raw = localStorage.getItem(STORAGE_FOLLOWUPS);
-      if (raw) return JSON.parse(raw);
-
-      const defaultFollowUps: FollowUpItem[] = [
-        {
-          id: 'fol-01',
-          patientName: 'Savita Ramesh Shinde',
-          title: '36-Week Ultrasound & Delivery Care Plan',
-          facilityName: 'Sub-District Hospital / Civil Hospital',
-          date: '2026-09-10',
-          type: 'maternal',
-          status: 'pending',
-          notes: 'Carry antenatal MCP card and blood test records'
-        },
-        {
-          id: 'fol-02',
-          patientName: 'Savita Ramesh Shinde',
-          title: 'ASHA Facilitator Home Visit & Nutrition Counseling',
-          facilityName: 'Sub-Centre / Anganwadi',
-          date: '2026-09-05',
-          type: 'maternal',
-          status: 'pending',
-          notes: 'Janani Suraksha Yojana verification'
-        }
-      ];
-      localStorage.setItem(STORAGE_FOLLOWUPS, JSON.stringify(defaultFollowUps));
-      return defaultFollowUps;
+      return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
     }

@@ -28,8 +28,7 @@ import {
   Plus, 
   Trash2, 
   Clock, 
-  Building2, 
-  Stethoscope
+  Building2 
 } from 'lucide-react';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'Unknown'];
@@ -52,17 +51,17 @@ export const MedicalCardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveProfileTab>('pass');
   const [isEditingVitals, setIsEditingVitals] = useState<boolean>(!userProfile);
 
-  // Form Vitals State
-  const [name, setName] = useState(userProfile?.name || 'Savita Ramesh Shinde');
-  const [age, setAge] = useState(userProfile?.age || '26');
+  // Form Vitals State (starts blank unless saved by user)
+  const [name, setName] = useState(userProfile?.name || '');
+  const [age, setAge] = useState(userProfile?.age || '');
   const [gender, setGender] = useState(userProfile?.gender || 'Female');
   const [bloodGroup, setBloodGroup] = useState(userProfile?.bloodGroup || 'O+');
-  const [emergencyKinName, setEmergencyKinName] = useState(userProfile?.emergencyKinName || userProfile?.emergencyContactName || 'Ramesh Shinde (Husband)');
-  const [emergencyKinPhone, setEmergencyKinPhone] = useState(userProfile?.emergencyKinPhone || userProfile?.emergencyContactPhone || '9822123456');
-  const [conditions, setConditions] = useState<string[]>(userProfile?.conditions || ['Pregnancy']);
-  const [pregnancyTrimester, setPregnancyTrimester] = useState(userProfile?.pregnancyTrimester || '3rd Trimester (Months 7-9, Near Delivery)');
-  const [allergies, setAllergies] = useState(userProfile?.allergies || 'No known drug allergies');
-  const [schemeCardNumber, setSchemeCardNumber] = useState(userProfile?.schemeCardNumber || 'PMJAY-MH-84920194');
+  const [emergencyKinName, setEmergencyKinName] = useState(userProfile?.emergencyKinName || userProfile?.emergencyContactName || '');
+  const [emergencyKinPhone, setEmergencyKinPhone] = useState(userProfile?.emergencyKinPhone || userProfile?.emergencyContactPhone || '');
+  const [conditions, setConditions] = useState<string[]>(userProfile?.conditions || []);
+  const [pregnancyTrimester, setPregnancyTrimester] = useState(userProfile?.pregnancyTrimester || '');
+  const [allergies, setAllergies] = useState(userProfile?.allergies || '');
+  const [schemeCardNumber, setSchemeCardNumber] = useState(userProfile?.schemeCardNumber || '');
   
   // Dynamic Lists State
   const [prescriptions, setPrescriptions] = useState<PrescriptionItem[]>(userProfile?.prescriptions || []);
@@ -270,6 +269,14 @@ export const MedicalCardPage: React.FC = () => {
     notifySuccess("Diagnostic test record added!");
   };
 
+  const handleDeleteLabReport = (id: string) => {
+    const updatedList = labReports.filter(l => l.id !== id);
+    setLabReports(updatedList);
+    if (userProfile) {
+      saveUserProfile({ ...userProfile, labReports: updatedList });
+    }
+  };
+
   const cleanKinPhone = (emergencyKinPhone || '').replace(/[^0-9+]/g, '');
 
   return (
@@ -313,7 +320,7 @@ export const MedicalCardPage: React.FC = () => {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            {name} — Digital Aarogya Pass
+            {name ? `${name} — Digital Aarogya Pass` : 'My Digital Aarogya Health Pass'}
           </h1>
 
           <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed max-w-3xl">
@@ -398,36 +405,56 @@ export const MedicalCardPage: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'pass' && !isEditingVitals && (
         <div className="space-y-6">
-          <div className="bg-white rounded-3xl border-2 border-teal-600/30 shadow-card p-6 sm:p-8 space-y-6">
-            
-            {/* Top Pass Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-700 to-emerald-900 text-white flex items-center justify-center font-black text-2xl shadow-md shadow-teal-900/20 shrink-0">
-                  {name.charAt(0).toUpperCase() || 'P'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 uppercase tracking-wider">
-                      OFFLINE EMERGENCY PASS
-                    </span>
-                    <span className="text-xs text-slate-600 font-medium">
-                      Record Trust ID: <strong>{schemeCardNumber || 'VERIFIED-RURAL-ID'}</strong>
-                    </span>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{name}</h2>
-                </div>
+          {!name ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-4 shadow-card">
+              <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
+                <Heart className="w-8 h-8 text-rose-600" />
               </div>
-
-              {/* High-Contrast Blood Group Badge */}
-              <div className="bg-rose-50 border-2 border-rose-300 text-rose-900 px-5 py-3 rounded-2xl text-center self-start sm:self-auto shadow-xs">
-                <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">BLOOD GROUP</span>
-                <span className="text-3xl sm:text-4xl font-black leading-tight text-rose-800">{bloodGroup}</span>
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-slate-900">Your Health Pass is Currently Blank</h3>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+                  No personal vitals recorded yet. Enter your details to create your official digital emergency pass for 108 ambulance and hospital OPD.
+                </p>
               </div>
+              <button
+                onClick={() => setIsEditingVitals(true)}
+                className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-black text-xs sm:text-sm rounded-xl shadow-md inline-flex items-center gap-2 tap-target"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Enter My Details & Create Health Pass</span>
+              </button>
             </div>
+          ) : (
+            <div className="bg-white rounded-3xl border-2 border-teal-600/30 shadow-card p-6 sm:p-8 space-y-6">
+              
+              {/* Top Pass Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-700 to-emerald-900 text-white flex items-center justify-center font-black text-2xl shadow-md shadow-teal-900/20 shrink-0">
+                    {name.charAt(0).toUpperCase() || 'P'}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 uppercase tracking-wider">
+                        OFFLINE EMERGENCY PASS
+                      </span>
+                      <span className="text-xs text-slate-600 font-medium">
+                        Record Trust ID: <strong>{schemeCardNumber || 'VERIFIED-RURAL-ID'}</strong>
+                      </span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{name}</h2>
+                  </div>
+                </div>
 
-            {/* Vitals Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* High-Contrast Blood Group Badge */}
+                <div className="bg-rose-50 border-2 border-rose-300 text-rose-900 px-5 py-3 rounded-2xl text-center self-start sm:self-auto shadow-xs">
+                  <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">BLOOD GROUP</span>
+                  <span className="text-3xl sm:text-4xl font-black leading-tight text-rose-800">{bloodGroup}</span>
+                </div>
+              </div>
+
+              {/* Vitals Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1">
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                   <User className="w-4 h-4 text-teal-700" />
@@ -513,8 +540,9 @@ export const MedicalCardPage: React.FC = () => {
               <span>Digital Health Registry — SIH PS 26133</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* ========================================================================= */}
       {/* TAB 2: ACTIVE PRESCRIPTIONS */}
@@ -594,75 +622,87 @@ export const MedicalCardPage: React.FC = () => {
           )}
 
           {/* Prescriptions List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {prescriptions.map((rx) => (
-              <div 
-                key={rx.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft hover:shadow-card transition-all space-y-3 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                      <Pill className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{rx.medicineName}</h4>
-                      <span className="text-[11px] text-teal-800 font-semibold">{rx.dosage}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleDeletePrescription(rx.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                    title="Remove Prescription"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-xl space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span><strong>Schedule:</strong> {rx.frequency}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
-                    <span>By: {rx.prescribedBy}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                  <span>Duration: {rx.durationDays}</span>
-                  <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
-                    <CheckCircle2 className="w-3 h-3" /> Active Course
-                  </span>
-                </div>
+          {prescriptions.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-3 shadow-card">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
+                <Pill className="w-7 h-7 text-emerald-700" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-black text-slate-800">No Prescriptions Recorded</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No doctor prescriptions saved on this device. Tap "Add Prescription" to record medications advised by your doctor or PHC.
+              </p>
+              <button
+                onClick={() => setShowAddRx(true)}
+                className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add First Prescription</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {prescriptions.map((rx) => (
+                <div 
+                  key={rx.id}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft hover:shadow-card transition-all space-y-3 relative overflow-hidden"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                        <Pill className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-900 leading-snug">{rx.medicineName}</h4>
+                        <span className="text-[11px] text-teal-800 font-semibold">{rx.dosage}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeletePrescription(rx.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                      title="Remove Prescription"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl space-y-1 text-xs text-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Frequency:</span>
+                      <span className="font-bold text-slate-900">{rx.frequency}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Doctor / PHC:</span>
+                      <span className="font-medium text-slate-800">{rx.prescribedBy}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: MEDICAL APPOINTMENTS & VISITS */}
+      {/* TAB 3: HOSPITAL APPOINTMENTS */}
       {/* ========================================================================= */}
       {activeTab === 'appointments' && !isEditingVitals && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-slate-900">Hospital Appointments & Checkup Reminders</h2>
-              <p className="text-xs text-slate-600">Scheduled antenatal care visits, doctor consultations, and ASHA facilitator follow-ups.</p>
+              <h2 className="text-xl font-black text-slate-900">Hospital Visits & Scheduled Checkups</h2>
+              <p className="text-xs text-slate-600">Track antenatal visits, chronic reviews, and ASHA home consultations.</p>
             </div>
             <button
               onClick={() => setShowAddApt(true)}
-              className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-md tap-target"
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-md tap-target"
             >
               <Plus className="w-4 h-4" />
               <span>Schedule Appointment</span>
             </button>
           </div>
 
-          {/* Add Appointment Form */}
+          {/* Add Appointment Modal */}
           {showAddApt && (
             <form onSubmit={handleAddAppointment} className="bg-blue-50/70 border-2 border-blue-600/30 rounded-3xl p-6 space-y-4 animate-in fade-in">
               <h3 className="font-bold text-sm text-blue-950 uppercase tracking-wider flex items-center gap-2">
@@ -721,51 +761,70 @@ export const MedicalCardPage: React.FC = () => {
           )}
 
           {/* Appointments Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {appointments.map((apt) => (
-              <div 
-                key={apt.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft hover:shadow-card transition-all space-y-3 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                        apt.status === 'upcoming' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {apt.status}
-                      </span>
-                      <h4 className="font-extrabold text-sm text-slate-900 leading-snug mt-1">{apt.title}</h4>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleDeleteAppointment(apt.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-xl space-y-1.5 text-xs text-slate-700">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                    <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{apt.date} • {apt.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{apt.facilityName}</span>
-                  </div>
-                  {apt.notes && (
-                    <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200">{apt.notes}</p>
-                  )}
-                </div>
+          {appointments.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-3 shadow-card">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto">
+                <Calendar className="w-7 h-7 text-blue-700" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-black text-slate-800">No Scheduled Appointments</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No hospital checkups or OPD visits recorded. Tap "Schedule Appointment" to add an upcoming visit or record a past consult.
+              </p>
+              <button
+                onClick={() => setShowAddApt(true)}
+                className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Schedule First Appointment</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {appointments.map((apt) => (
+                <div 
+                  key={apt.id}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft hover:shadow-card transition-all space-y-3 relative overflow-hidden"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          apt.status === 'upcoming' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {apt.status}
+                        </span>
+                        <h4 className="font-extrabold text-sm text-slate-900 leading-snug mt-1">{apt.title}</h4>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteAppointment(apt.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl space-y-1.5 text-xs text-slate-700">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{apt.date} • {apt.time}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-600">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{apt.facilityName}</span>
+                    </div>
+                    {apt.notes && (
+                      <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200">{apt.notes}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -839,39 +898,59 @@ export const MedicalCardPage: React.FC = () => {
             </form>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {vaccinations.map((vac) => (
-              <div 
-                key={vac.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft space-y-2.5 relative group"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shrink-0">
-                      <Syringe className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-slate-900">{vac.vaccineName}</h4>
-                      <span className="text-xs text-emerald-700 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Administered on {vac.dateGiven}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleDeleteVaccine(vac.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                    title="Delete Vaccine Record"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                  Centre: <strong>{vac.centerName}</strong>
-                </div>
+          {/* Vaccines List */}
+          {vaccinations.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-3 shadow-card">
+              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto">
+                <Syringe className="w-7 h-7 text-purple-700" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-black text-slate-800">No Immunization Records</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No vaccination history saved on this device. Tap "Add Vaccine Record" to track maternal or child immunizations.
+              </p>
+              <button
+                onClick={() => setShowAddVac(true)}
+                className="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add First Vaccine Record</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {vaccinations.map((vac) => (
+                <div 
+                  key={vac.id}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft space-y-2.5 relative group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shrink-0">
+                        <Syringe className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-900">{vac.vaccineName}</h4>
+                        <span className="text-xs text-emerald-700 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Administered on {vac.dateGiven}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteVaccine(vac.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                      title="Delete Vaccine Record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                    Centre: <strong>{vac.centerName}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -947,29 +1026,56 @@ export const MedicalCardPage: React.FC = () => {
           )}
 
           {/* Labs Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {labReports.map((lab) => (
-              <div 
-                key={lab.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft space-y-3"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-extrabold text-sm text-slate-900">{lab.testName}</h4>
-                    <span className="text-[11px] text-slate-500">Date: {lab.testDate}</span>
-                  </div>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {lab.status}
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-xl space-y-1">
-                  <div className="text-xl font-black text-slate-900">{lab.resultValue}</div>
-                  <div className="text-[11px] text-slate-500">Reference: {lab.normalRange}</div>
-                </div>
+          {labReports.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-3 shadow-card">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+                <FileText className="w-7 h-7 text-amber-700" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-black text-slate-800">No Diagnostic Reports Recorded</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No pathology or blood test records stored. Tap "Add Lab Result" to record your lab test values.
+              </p>
+              <button
+                onClick={() => setShowAddLab(true)}
+                className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add First Lab Result</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {labReports.map((lab) => (
+                <div 
+                  key={lab.id}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-900">{lab.testName}</h4>
+                      <span className="text-[11px] text-slate-500">Date: {lab.testDate}</span>
+                    </div>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {lab.status}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl space-y-1">
+                    <div className="text-xl font-black text-slate-900">{lab.resultValue}</div>
+                    <div className="text-[11px] text-slate-500">Reference: {lab.normalRange}</div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDeleteLabReport(lab.id)}
+                    className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 pt-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove Report</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

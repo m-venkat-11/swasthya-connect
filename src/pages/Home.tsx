@@ -393,16 +393,16 @@ export const Home: React.FC = () => {
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                {userProfile ? `Emergency Pass: ${userProfile.name}` : t('medicalCardTitle')}
+                {userProfile?.name ? `Emergency Pass: ${userProfile.name}` : t('medicalCardTitle')}
               </h3>
-              {userProfile && (
+              {userProfile?.bloodGroup && (
                 <span className="bg-rose-100 text-rose-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                   Blood: {userProfile.bloodGroup}
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-600">
-              {userProfile 
+              {userProfile?.name 
                 ? `Kin Contact: ${userProfile.emergencyKinName || userProfile.emergencyContactName || 'Saved'} (${userProfile.emergencyKinPhone || userProfile.emergencyContactPhone}) • Offline Ready`
                 : t('noProfileYet')
               }
@@ -414,7 +414,7 @@ export const Home: React.FC = () => {
           onClick={() => navigate('/profile')}
           className="w-full sm:w-auto px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target shrink-0"
         >
-          <span>{userProfile ? 'View / Edit Health Pass' : 'Create My Health Card'}</span>
+          <span>{userProfile?.name ? 'View / Edit Health Pass' : 'Create My Health Card'}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>

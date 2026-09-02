@@ -94,126 +94,25 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Default initial sample profile with prescriptions & appointments
-const DEFAULT_INITIAL_PROFILE: UserMedicalProfile = {
-  name: "Savita Ramesh Shinde",
-  age: "26",
+const DEFAULT_EMPTY_PROFILE: UserMedicalProfile = {
+  name: "",
+  age: "",
   gender: "Female",
-  bloodGroup: "O+",
-  emergencyContactName: "Ramesh Shinde (Husband)",
-  emergencyContactPhone: "9822123456",
-  emergencyKinName: "Ramesh Shinde (Husband)",
-  emergencyKinPhone: "9822123456",
-  conditions: ["Pregnancy", "Mild Anemia"],
-  pregnancyTrimester: "3rd Trimester (Months 7-9, Near Delivery)",
-  allergies: "None / No known drug allergies",
-  schemeCardNumber: "PMJAY-MH-84920194",
-  pincode: "442605",
-  lastUpdated: new Date().toISOString().split('T')[0],
-  prescriptions: [
-    {
-      id: "rx-1",
-      medicineName: "Iron & Folic Acid Tablets (IFA)",
-      dosage: "100mg elemental iron + 500mcg folic acid",
-      frequency: "1 tablet once daily after lunch",
-      prescribedBy: "Dr. A. K. Sharma (District Civil Hospital)",
-      startDate: "2026-08-15",
-      durationDays: "90 Days",
-      isActive: true
-    },
-    {
-      id: "rx-2",
-      medicineName: "Calcium Carbonate + Vitamin D3",
-      dosage: "500mg calcium",
-      frequency: "1 tablet twice daily after meals",
-      prescribedBy: "Medical Officer, PHC Kurkheda",
-      startDate: "2026-08-20",
-      durationDays: "60 Days",
-      isActive: true
-    },
-    {
-      id: "rx-3",
-      medicineName: "Paracetamol 500mg (SOS for fever)",
-      dosage: "500mg",
-      frequency: "Only if fever > 100°F (Max 3 times daily)",
-      prescribedBy: "Medical Officer, PHC Kurkheda",
-      startDate: "2026-08-20",
-      durationDays: "As needed",
-      isActive: false
-    }
-  ],
-  appointments: [
-    {
-      id: "apt-1",
-      title: "Antenatal Checkup #4 (36-Week Ultrasound & Delivery Plan)",
-      facilityName: "Sub-District Hospital / Civil Hospital",
-      doctorName: "Dr. Sneha Deshmukh (Gynecologist)",
-      date: "2026-09-10",
-      time: "10:30 AM",
-      status: "upcoming",
-      notes: "Carry previous sonography reports and maternal MCP card"
-    },
-    {
-      id: "apt-2",
-      title: "ASHA Worker Home Visit & Nutrition Counseling",
-      facilityName: "Sub-Centre / Anganwadi",
-      doctorName: "Meena Tai (ASHA Facilitator)",
-      date: "2026-09-05",
-      time: "02:00 PM",
-      status: "upcoming",
-      notes: "Janani Suraksha Yojana (JSY) direct benefit transfer form verification"
-    },
-    {
-      id: "apt-3",
-      title: "Routine Blood Glucose & Hb Screening (Completed)",
-      facilityName: "Primary Health Centre (PHC)",
-      doctorName: "Lab Technician Rahul",
-      date: "2026-08-18",
-      time: "09:00 AM",
-      status: "completed",
-      notes: "Hb report: 11.2 g/dL. Blood pressure: 118/76 mmHg. Normal."
-    }
-  ],
-  vaccinations: [
-    {
-      id: "vac-1",
-      vaccineName: "Tetanus & adult Diphtheria (Td 1)",
-      dateGiven: "2026-03-12",
-      centerName: "PHC Health Sub-Centre"
-    },
-    {
-      id: "vac-2",
-      vaccineName: "Tetanus & adult Diphtheria (Td 2 / Booster)",
-      dateGiven: "2026-04-15",
-      centerName: "Sub-District Hospital"
-    }
-  ],
-  labReports: [
-    {
-      id: "lab-1",
-      testName: "Hemoglobin (Hb)",
-      resultValue: "11.2 g/dL",
-      normalRange: "11.0 - 15.0 g/dL",
-      testDate: "2026-08-18",
-      status: "Normal"
-    },
-    {
-      id: "lab-2",
-      testName: "Random Blood Sugar (RBS)",
-      resultValue: "104 mg/dL",
-      normalRange: "70 - 140 mg/dL",
-      testDate: "2026-08-18",
-      status: "Normal"
-    },
-    {
-      id: "lab-3",
-      testName: "Blood Group & Rh Typing",
-      resultValue: "O Positive (Rh+)",
-      normalRange: "Verified Record",
-      testDate: "2026-03-10",
-      status: "Normal"
-    }
-  ]
+  bloodGroup: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  emergencyKinName: "",
+  emergencyKinPhone: "",
+  conditions: [],
+  pregnancyTrimester: "",
+  allergies: "",
+  schemeCardNumber: "",
+  pincode: "",
+  lastUpdated: "",
+  prescriptions: [],
+  appointments: [],
+  vaccinations: [],
+  labReports: []
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -254,24 +153,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem(STORAGE_KEY_ADMIN_AUTH) === 'true';
   });
 
-  // User Medical Profile
+  // User Medical Profile (Blank unless saved by the user)
   const [userProfile, setUserProfile] = useState<UserMedicalProfile | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_USER_PROFILE);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
-          ...DEFAULT_INITIAL_PROFILE,
-          ...parsed,
-          prescriptions: parsed.prescriptions || DEFAULT_INITIAL_PROFILE.prescriptions,
-          appointments: parsed.appointments || DEFAULT_INITIAL_PROFILE.appointments,
-          vaccinations: parsed.vaccinations || DEFAULT_INITIAL_PROFILE.vaccinations,
-          labReports: parsed.labReports || DEFAULT_INITIAL_PROFILE.labReports
-        };
+        if (parsed && parsed.name && parsed.name.trim().length > 0) {
+          return {
+            ...DEFAULT_EMPTY_PROFILE,
+            ...parsed,
+            prescriptions: parsed.prescriptions || [],
+            appointments: parsed.appointments || [],
+            vaccinations: parsed.vaccinations || [],
+            labReports: parsed.labReports || []
+          };
+        }
       }
-      return DEFAULT_INITIAL_PROFILE;
+      return null;
     } catch {
-      return DEFAULT_INITIAL_PROFILE;
+      return null;
     }
   });
 
@@ -345,8 +246,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // PERSISTENT RECORDS: APPOINTMENTS, REFERRALS, FOLLOW-UPS
   // =========================================================================
   const [appointments, setAppointments] = useState<MedicalAppointment[]>(() => {
-    const local = persistenceService.getLocalAppointments();
-    return local.length > 0 ? local : (DEFAULT_INITIAL_PROFILE.appointments || []);
+    return persistenceService.getLocalAppointments();
   });
 
   const [referrals] = useState<ReferralRecord[]>(() => {
