@@ -12,8 +12,10 @@ import {
   Sparkles, 
   Search, 
   X,
-  ShieldCheck,
-  WifiOff
+  ShieldCheck, 
+  WifiOff,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { MedicalProfileModal } from './MedicalProfileModal';
 
@@ -37,6 +39,9 @@ export const NavigationDock: React.FC = () => {
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState(false);
 
+  // Collapsible toggle inspired by Flowly Image 2 (compact icon rail vs expanded drawer)
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+
   const isCurrent = (path: string) => location.pathname === path;
 
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -54,88 +59,118 @@ export const NavigationDock: React.FC = () => {
 
   return (
     <>
-      {/* DESKTOP FULL-HEIGHT FROSTED DOCK (Perfect Fit to Desktop Viewport, Inspired by Flowly UI) */}
-      <aside className="hidden lg:flex fixed left-5 top-20 bottom-5 z-30 w-72 bg-white/85 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-soft p-5 flex-col justify-between transition-all overflow-y-auto">
+      {/* DESKTOP FROSTED DOCK (COLLAPSIBLE LIKE FLOWLY UI: THIN ICON RAIL OR FULL DRAWER) */}
+      <aside 
+        className={`hidden lg:flex fixed left-4 top-20 bottom-4 z-40 bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-xl transition-all duration-300 flex-col justify-between overflow-y-auto ${
+          isExpanded ? 'w-72 p-5' : 'w-20 p-3 items-center'
+        }`}
+      >
         
         {/* TOP CONTENT GROUP */}
-        <div className="space-y-6">
+        <div className="w-full space-y-5">
           
-          {/* Brand Identity Card in Sidebar */}
-          <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-teal-50/80 to-emerald-50/60 rounded-2xl border border-teal-100/80">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-700 via-teal-800 to-emerald-950 flex items-center justify-center text-white shadow-md shadow-teal-900/20 shrink-0">
-              <Sparkles className="w-5 h-5 text-teal-200" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="font-black text-sm text-slate-900 tracking-tight block leading-tight truncate">
-                SwasthyaConnect
-              </span>
-              <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">
-                SIH PS 26133 • Rural Access
-              </span>
-            </div>
+          {/* Header & Toggle Button (Exact Flowly Header with Arrow Button) */}
+          <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} w-full border-b border-slate-100 pb-3`}>
+            {isExpanded ? (
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-teal-700 via-teal-800 to-emerald-950 flex items-center justify-center text-white shadow-md shadow-teal-900/20 shrink-0">
+                  <Sparkles className="w-4 h-4 text-teal-200" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="font-black text-xs text-slate-900 tracking-wider uppercase block leading-tight truncate">
+                    MAIN MENU
+                  </span>
+                  <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">
+                    SwasthyaConnect
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-700 to-emerald-900 flex items-center justify-center text-white shadow-md shrink-0">
+                <Sparkles className="w-5 h-5 text-teal-200" />
+              </div>
+            )}
+
+            {/* Collapse/Expand Toggle Button (like > in Flowly design) */}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-2xs"
+              title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+              aria-label="Toggle Sidebar"
+            >
+              {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
           </div>
 
           {/* SECTION 1: PRIMARY CARE */}
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider px-3 mb-1">
-              Primary Care
-            </div>
+          <div className="w-full space-y-1.5">
+            {isExpanded && (
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
+                PRIMARY CARE
+              </div>
+            )}
 
             <Link
               to="/"
-              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              title="Home"
+              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/') 
-                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20 pl-4' 
+                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
               }`}
             >
               {isCurrent('/') && (
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
-              <Home className="w-4 h-4 shrink-0" />
-              <span>{t('navHome')}</span>
+              <Home className="w-5 h-5 shrink-0" />
+              {isExpanded && <span>{t('navHome')}</span>}
             </Link>
 
-            {/* Emergency 24x7 Highlight */}
+            {/* Emergency 24x7 Urgent Highlight */}
             <Link
               to="/emergency"
-              className={`relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-black transition-all ${
+              title="24x7 Emergency"
+              className={`relative flex items-center ${isExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-black transition-all ${
                 isCurrent('/emergency') 
-                  ? 'bg-emergency-600 text-white shadow-md shadow-emergency-600/30 pl-4' 
-                  : 'bg-emergency-50/80 text-emergency-700 hover:bg-emergency-100/90 border border-emergency-200/60'
+                  ? 'bg-emergency-600 text-white shadow-md shadow-emergency-600/30' 
+                  : 'bg-emergency-50/90 text-emergency-700 hover:bg-emergency-100 border border-emergency-200/80'
               }`}
             >
               {isCurrent('/emergency') && (
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-white rounded-full"></span>
               )}
               <div className="flex items-center gap-2.5">
-                <PhoneCall className="w-4 h-4 animate-pulse" />
-                <span>{t('navEmergency')}</span>
+                <PhoneCall className="w-5 h-5 animate-pulse shrink-0" />
+                {isExpanded && <span className="uppercase tracking-wide">{t('navEmergency')}</span>}
               </div>
-              <span className="w-2 h-2 rounded-full bg-emergency-500 animate-ping"></span>
+              {isExpanded && <span className="w-2 h-2 rounded-full bg-emergency-500 animate-ping"></span>}
             </Link>
 
             {/* Medical Profile Pass */}
             <button
               onClick={() => setIsProfileOpen(true)}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-700 hover:bg-teal-50/70 hover:text-teal-900 transition-all text-left"
+              title="My Emergency Medical Pass"
+              className={`w-full flex items-center ${isExpanded ? 'gap-3 px-3.5 text-left' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold text-slate-700 hover:bg-teal-50/70 hover:text-teal-900 transition-all`}
             >
-              <Heart className="w-4 h-4 text-rose-500 shrink-0" />
-              <span>{t('navProfile')}</span>
+              <Heart className="w-5 h-5 text-rose-500 shrink-0" />
+              {isExpanded && <span>{t('navProfile')}</span>}
             </button>
           </div>
 
           {/* SECTION 2: LOCATION & SERVICES */}
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider px-3 mb-1">
-              Location & Services
-            </div>
+          <div className="w-full space-y-1.5">
+            {isExpanded && (
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
+                LOCATION & SERVICES
+              </div>
+            )}
 
             <Link
               to="/location"
-              className={`relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              title={`Location: ${selectedDistrict}`}
+              className={`relative flex items-center ${isExpanded ? 'justify-between px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/location') 
-                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20 pl-4' 
+                  ? 'bg-teal-700 text-white shadow-md' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
               }`}
             >
@@ -143,11 +178,11 @@ export const NavigationDock: React.FC = () => {
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
               <div className="flex items-center gap-2.5 truncate">
-                <MapPin className="w-4 h-4 text-teal-600 shrink-0" />
-                <span className="truncate">{selectedDistrict}</span>
+                <MapPin className="w-5 h-5 text-teal-600 shrink-0" />
+                {isExpanded && <span className="truncate max-w-[150px]">{selectedDistrict}</span>}
               </div>
-              {isLiveGpsActive && (
-                <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
+              {isExpanded && isLiveGpsActive && (
+                <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-black shrink-0">
                   GPS
                 </span>
               )}
@@ -155,94 +190,114 @@ export const NavigationDock: React.FC = () => {
 
             <Link
               to="/services"
-              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              title="Search Healthcare Needs"
+              className={`relative flex items-center ${isExpanded ? 'gap-3 px-3.5' : 'justify-center px-2'} py-2.5 rounded-2xl text-xs font-bold transition-all ${
                 isCurrent('/services') 
-                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20 pl-4' 
+                  ? 'bg-teal-700 text-white shadow-md' 
                   : 'text-slate-700 hover:bg-teal-50/70 hover:text-teal-900'
               }`}
             >
               {isCurrent('/services') && (
                 <span className="absolute left-1 top-2.5 bottom-2.5 w-1 bg-amber-400 rounded-full"></span>
               )}
-              <Search className="w-4 h-4 text-slate-500 shrink-0" />
-              <span>{t('navNeeds')}</span>
+              <Search className="w-5 h-5 text-slate-500 shrink-0" />
+              {isExpanded && <span>{t('navNeeds')}</span>}
             </Link>
           </div>
 
         </div>
 
-        {/* BOTTOM CONTENT GROUP */}
-        <div className="space-y-3 pt-4 border-t border-slate-200/70">
+        {/* BOTTOM CONTENT GROUP: LANGUAGE & ADMIN SETTINGS */}
+        <div className="w-full space-y-3 pt-3 border-t border-slate-200/70">
           
-          <div className="space-y-1">
-            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider px-3 mb-1">
-              Language & Settings
-            </div>
+          {isExpanded ? (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-1">
+                LANGUAGE & SETTINGS
+              </div>
 
-            {/* Trilingual Toggle Chips */}
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80">
-              {(['mr', 'en', 'te'] as const).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLanguage(l)}
-                  className={`py-1 rounded-lg text-[11px] font-bold transition-all ${
-                    language === l 
-                      ? 'bg-teal-700 text-white shadow-xs' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {l === 'mr' ? 'मराठी' : l === 'en' ? 'EN' : 'తెలుగు'}
-                </button>
-              ))}
+              {/* Trilingual Toggle Chips in Dashboard */}
+              <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                {(['mr', 'en', 'te'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLanguage(l)}
+                    className={`py-1 rounded-lg text-[11px] font-black transition-all ${
+                      language === l 
+                        ? 'bg-teal-700 text-white shadow-xs' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {l === 'mr' ? 'मराठी' : l === 'en' ? 'EN' : 'తెలుగు'}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Collapsed Language Quick Switcher */
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'mr' : language === 'mr' ? 'te' : 'en')}
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-[10px] font-black uppercase text-teal-800 text-center"
+              title="Cycle Language"
+            >
+              {language.toUpperCase()}
+            </button>
+          )}
 
           {/* Secret Admin Gated Button */}
           {isAdminUnlocked ? (
-            <div className="flex items-center gap-1.5 pt-1">
+            <div className={`flex items-center gap-1.5 ${isExpanded ? '' : 'justify-center'}`}>
               <Link
                 to="/admin"
-                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200 hover:bg-teal-100 transition-colors"
+                className={`flex-1 flex items-center ${isExpanded ? 'gap-2 px-3' : 'justify-center p-2'} py-2 rounded-xl bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200 hover:bg-teal-100 transition-colors`}
+                title="Admin Excel/CSV Portal"
               >
-                <Settings className="w-3.5 h-3.5 text-teal-700" />
-                <span>Admin Excel/CSV</span>
+                <Settings className="w-4 h-4 text-teal-700 shrink-0" />
+                {isExpanded && <span>Admin Excel/CSV</span>}
               </Link>
-              <button
-                onClick={lockAdmin}
-                className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                title="Lock Admin Mode"
-              >
-                <Lock className="w-3.5 h-3.5" />
-              </button>
+              {isExpanded && (
+                <button
+                  onClick={lockAdmin}
+                  className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  title="Lock Admin Mode"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           ) : (
             <button
               onClick={() => setIsPinModalOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200/70 transition-colors group"
+              className={`w-full flex items-center ${isExpanded ? 'justify-between px-3' : 'justify-center p-2'} py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200/70 transition-colors group`}
+              title="Admin Security Gate"
             >
               <span className="flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-600" />
-                <span>Admin Security Gate</span>
+                <KeyRound className="w-4 h-4 text-slate-400 group-hover:text-teal-600 shrink-0" />
+                {isExpanded && <span>Admin Security Gate</span>}
               </span>
-              <span className="text-[9px] bg-slate-200 text-slate-700 font-mono font-bold px-1.5 py-0.5 rounded">
-                PIN
-              </span>
+              {isExpanded && (
+                <span className="text-[9px] bg-slate-200 text-slate-700 font-mono font-bold px-1.5 py-0.5 rounded">
+                  PIN
+                </span>
+              )}
             </button>
           )}
 
           {/* System Status Footer in Sidebar */}
-          <div className="p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 flex items-center justify-between text-[10px] text-slate-500 font-medium">
-            <span className="flex items-center gap-1 text-emerald-700 font-bold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Offline Ready</span>
-            </span>
-            {isOffline && (
-              <span className="flex items-center gap-1 text-amber-700 font-bold">
-                <WifiOff className="w-3 h-3" /> Offline
+          {isExpanded && (
+            <div className="p-2.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span className="flex items-center gap-1 text-emerald-700 font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Offline Ready</span>
               </span>
-            )}
-            <span>v1.2</span>
-          </div>
+              {isOffline && (
+                <span className="flex items-center gap-1 text-amber-700 font-bold">
+                  <WifiOff className="w-3 h-3" /> Offline
+                </span>
+              )}
+              <span>v1.2</span>
+            </div>
+          )}
 
         </div>
 
