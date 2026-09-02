@@ -243,7 +243,7 @@ export const AdminPortal: React.FC = () => {
 
           {pinError && (
             <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">
-              Access denied. Enter valid passcode (default: sih2026).
+              Access denied. Invalid administrator passcode.
             </p>
           )}
 

@@ -164,11 +164,11 @@ export const Header: React.FC = () => {
             <form onSubmit={handlePinSubmit} className="space-y-3">
               <input
                 type="password"
-                placeholder="Enter PIN (e.g. sih2026)"
+                placeholder="••••••••"
                 value={enteredPin}
                 onChange={(e) => setEnteredPin(e.target.value)}
                 autoFocus
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 font-mono tracking-widest text-center"
               />
 
               {pinError && (

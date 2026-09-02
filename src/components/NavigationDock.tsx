@@ -453,15 +453,15 @@ export const NavigationDock: React.FC = () => {
                 type="password"
                 required
                 autoFocus
-                placeholder="Enter Admin PIN (default: sih2026)"
+                placeholder="••••••••"
                 value={enteredPin}
                 onChange={(e) => { setEnteredPin(e.target.value); setPinError(false); }}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-teal-600 bg-slate-50"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono font-bold text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-teal-600 bg-slate-50"
               />
 
               {pinError && (
                 <p className="text-xs text-rose-600 font-bold text-center">
-                  Incorrect PIN. Hint: use default "sih2026".
+                  Access denied. Incorrect security passcode.
                 </p>
               )}
 
