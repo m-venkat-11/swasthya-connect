@@ -69,7 +69,7 @@ export const FacilityDetail: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-14">
+    <div className="w-full space-y-6 pb-14 animate-in fade-in duration-200">
       
       {/* Back Button */}
       <button
