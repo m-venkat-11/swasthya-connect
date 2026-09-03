@@ -21,6 +21,7 @@ export const LocationStep: React.FC = () => {
     selectedDistrict, 
     setSelectedDistrict, 
     setUserCoords,
+    setIsLiveGpsActive,
     loadLiveNearbyHospitals,
     t 
   } = useApp();
@@ -59,6 +60,7 @@ export const LocationStep: React.FC = () => {
           setIsDetecting(false);
           const { latitude, longitude } = position.coords;
           setUserCoords({ lat: latitude, lng: longitude });
+          setIsLiveGpsActive(true);
 
           // Determine closest district
           let closest = selectedDistrict;
@@ -84,6 +86,7 @@ export const LocationStep: React.FC = () => {
           const simulatedLat = target.lat + 0.035;
           const simulatedLng = target.lng - 0.025;
           setUserCoords({ lat: simulatedLat, lng: simulatedLng });
+          setIsLiveGpsActive(true);
           await loadLiveNearbyHospitals(simulatedLat, simulatedLng, selectedDistrict, selectedState);
           navigate('/results');
         },
@@ -95,14 +98,13 @@ export const LocationStep: React.FC = () => {
     }
   };
 
-  const handleSelectDistrict = async (districtName: string, stateName: string) => {
+  const handleSelectDistrict = (districtName: string, stateName: string) => {
     setSelectedState(stateName);
     setSelectedDistrict(districtName);
-    const coords = DISTRICT_COORDINATES[districtName];
-    if (coords) {
-      setUserCoords({ lat: coords.lat, lng: coords.lng });
-      await loadLiveNearbyHospitals(coords.lat, coords.lng, districtName, stateName);
-    }
+    // Manual district selection browses official verified Excel dataset for that district
+    // Clear live GPS mode so it doesn't show fake GPS radar
+    setUserCoords(null);
+    setIsLiveGpsActive(false);
     navigate('/results');
   };
 

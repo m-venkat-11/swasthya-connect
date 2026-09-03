@@ -123,8 +123,8 @@ export const RecommendedFacilities: React.FC = () => {
         </div>
       </div>
 
-      {/* Live GPS Radar & Satellite Detection Banner */}
-      {userCoords && (
+      {/* Live GPS Radar vs District Master Database Banner */}
+      {isLiveGpsActive && userCoords ? (
         <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-3.5 px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="relative flex h-3 w-3 shrink-0">
@@ -132,7 +132,7 @@ export const RecommendedFacilities: React.FC = () => {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
             </span>
             <div className="text-xs text-emerald-950 font-medium">
-              <strong className="font-bold text-emerald-900">Live Location Radar Active:</strong> Showing nearby Government & Private hospitals within 45 km radius.
+              <strong className="font-bold text-emerald-900">Live Device GPS Active:</strong> Showing nearby Government & Private hospitals within 45 km radius of your physical coordinates.
               <span className="text-emerald-700 text-[11px] block sm:inline sm:ml-1.5 font-semibold">
                 (GPS: {userCoords.lat.toFixed(4)}°N, {userCoords.lng.toFixed(4)}°E)
               </span>
@@ -140,7 +140,7 @@ export const RecommendedFacilities: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-full">
-              {isLiveGpsActive ? 'Live GPS Satellite Radar' : 'OSM & Spatial Radar Blended'}
+              Live GPS Satellite Radar
             </span>
             <button
               onClick={handleRefreshRadar}
@@ -152,6 +152,21 @@ export const RecommendedFacilities: React.FC = () => {
               <span>Rescan</span>
             </button>
           </div>
+        </div>
+      ) : (
+        <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3 px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs">
+          <div className="flex items-center gap-2 text-xs text-slate-700">
+            <MapPin className="w-4 h-4 text-teal-700 shrink-0" />
+            <span>
+              <strong>District Master Directory:</strong> Showing verified healthcare facilities in <strong>{selectedDistrict}, {selectedState}</strong> from official database. Distances measured from district center.
+            </span>
+          </div>
+          <Link
+            to="/location"
+            className="text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-white border border-slate-200 px-3 py-1 rounded-xl shadow-2xs shrink-0 flex items-center gap-1 hover:bg-slate-100 transition-colors"
+          >
+            <span>📡 Use Current GPS</span>
+          </Link>
         </div>
       )}
 
@@ -190,7 +205,7 @@ export const RecommendedFacilities: React.FC = () => {
               Suitability Score: <strong className="text-emerald-300 text-sm">{topRecommended.accessibilityScore}/100</strong>
             </span>
             <span>•</span>
-            <span>Distance: <strong className="text-white">{topRecommended.distanceKm} km</strong> (~{topRecommended.estimatedTravelMinutes} mins)</span>
+            <span>Distance: <strong className="text-white">{topRecommended.distanceKm} km</strong> (~{topRecommended.estimatedTravelMinutes} mins) {isLiveGpsActive ? '(from GPS)' : '(from District Center)'}</span>
             <span>•</span>
             <span className={topRecommended.facility.is_govt ? "text-emerald-300 font-bold" : "text-amber-300 font-bold"}>
               {topRecommended.facility.is_govt ? "100% Free Public Care" : "Private Multi-Specialty Facility"}

@@ -31,6 +31,7 @@ interface AppContextType {
   userCoords: { lat: number; lng: number } | null;
   setUserCoords: (coords: { lat: number; lng: number } | null) => void;
   isLiveGpsActive: boolean;
+  setIsLiveGpsActive: (active: boolean) => void;
   loadLiveNearbyHospitals: (lat: number, lng: number, district?: string, state?: string) => Promise<void>;
   t: (key: string) => string;
   updateFacilityAdmin: (facilityId: string, updates: Partial<Facility>) => void;
@@ -510,6 +511,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userCoords,
         setUserCoords,
         isLiveGpsActive,
+        setIsLiveGpsActive,
         loadLiveNearbyHospitals,
         t,
         updateFacilityAdmin,
