@@ -12,10 +12,10 @@ import type {
 } from '../types';
 import seedData from '../data/facilities_seed.json';
 import { TRANSLATIONS } from '../data/translations';
-import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
 import { authService } from '../services/authService';
 import { persistenceService } from '../services/persistenceService';
 import { liveHospitalService } from '../services/liveHospitalService';
+import { liveLocationService } from '../services/liveLocationService';
 
 interface AppContextType {
   language: LanguageCode;
@@ -85,17 +85,6 @@ const STORAGE_KEY_ADMIN_AUTH = 'swasthya_admin_unlocked';
 const STORAGE_KEY_SIDEBAR = 'swasthya_sidebar_expanded';
 
 const ADMIN_PIN = import.meta.env.VITE_ADMIN_PASSCODE || 'sih2026';
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 const DEFAULT_EMPTY_PROFILE: UserMedicalProfile = {
   name: "",
@@ -310,45 +299,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [selectedDistrict, selectedState]);
 
   // Auto-Geolocation
-  const autoDetectLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserCoords({ lat: latitude, lng: longitude });
+  const autoDetectLocation = useCallback(async () => {
+    try {
+      const loc = await liveLocationService.detectCurrentLocation();
+      if (loc) {
+        setUserCoords({ lat: loc.lat, lng: loc.lng });
         setIsLiveGpsActive(true);
-
-        let closestDistrict = '';
-        let closestDistance = Infinity;
-        let matchedState = '';
-
-        for (const [distName, data] of Object.entries(DISTRICT_COORDINATES)) {
-          const d = calculateDistance(latitude, longitude, data.lat, data.lng);
-          if (d < closestDistance) {
-            closestDistance = d;
-            closestDistrict = distName;
-            matchedState = data.state;
-          }
-        }
-
-        if (closestDistrict && closestDistance < 250) {
-          setSelectedDistrictState(closestDistrict);
-          setSelectedStateState(matchedState);
-          localStorage.setItem(STORAGE_KEY_DISTRICT, closestDistrict);
-          localStorage.setItem(STORAGE_KEY_STATE, matchedState);
-        }
-
-        // Dynamically load live Government and Private hospitals near the user GPS
-        loadLiveNearbyHospitals(latitude, longitude, closestDistrict || selectedDistrict, matchedState || selectedState);
-      },
-      (err) => {
-        console.log("GPS not granted; using district default:", err.message);
-        setIsLiveGpsActive(false);
-      },
-      { timeout: 8000, enableHighAccuracy: false }
-    );
-  }, [loadLiveNearbyHospitals, selectedDistrict, selectedState]);
+        setSelectedDistrictState(loc.district);
+        setSelectedStateState(loc.state);
+        localStorage.setItem(STORAGE_KEY_DISTRICT, loc.district);
+        localStorage.setItem(STORAGE_KEY_STATE, loc.state);
+        loadLiveNearbyHospitals(loc.lat, loc.lng, loc.district, loc.state);
+      }
+    } catch (err) {
+      console.log("Auto-location detection skipped:", err);
+      setIsLiveGpsActive(false);
+    }
+  }, [loadLiveNearbyHospitals]);
 
   useEffect(() => {
     autoDetectLocation();

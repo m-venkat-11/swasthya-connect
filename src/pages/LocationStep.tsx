@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
+import { liveLocationService } from '../services/liveLocationService';
 import { 
   Navigation, 
   CheckCircle2, 
@@ -51,48 +52,19 @@ export const LocationStep: React.FC = () => {
     { name: "Pune", state: "Maharashtra", desc: "Mixed rural and semi-urban tertiary referral network" }
   ];
 
-  const handleSimulateGPS = () => {
+  const handleSimulateGPS = async () => {
     setIsDetecting(true);
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          setIsDetecting(false);
-          const { latitude, longitude } = position.coords;
-          setUserCoords({ lat: latitude, lng: longitude });
-          setIsLiveGpsActive(true);
-
-          // Determine closest district
-          let closest = selectedDistrict;
-          let closestState = selectedState;
-          let minD = Infinity;
-          for (const [name, data] of Object.entries(DISTRICT_COORDINATES)) {
-            const d = Math.hypot(latitude - data.lat, longitude - data.lng);
-            if (d < minD) {
-              minD = d;
-              closest = name;
-              closestState = data.state;
-            }
-          }
-          setSelectedDistrict(closest);
-          setSelectedState(closestState);
-          await loadLiveNearbyHospitals(latitude, longitude, closest, closestState);
-          navigate('/results');
-        },
-        async () => {
-          // If browser prompt is rejected or restricted, use realistic live coordinates
-          setIsDetecting(false);
-          const target = DISTRICT_COORDINATES[selectedDistrict] || DISTRICT_COORDINATES['Gadchiroli (Tribal Agency)'];
-          const simulatedLat = target.lat + 0.035;
-          const simulatedLng = target.lng - 0.025;
-          setUserCoords({ lat: simulatedLat, lng: simulatedLng });
-          setIsLiveGpsActive(true);
-          await loadLiveNearbyHospitals(simulatedLat, simulatedLng, selectedDistrict, selectedState);
-          navigate('/results');
-        },
-        { timeout: 5000, enableHighAccuracy: true }
-      );
-    } else {
+    try {
+      const loc = await liveLocationService.detectCurrentLocation();
+      setSelectedState(loc.state);
+      setSelectedDistrict(loc.district);
+      setUserCoords({ lat: loc.lat, lng: loc.lng });
+      setIsLiveGpsActive(true);
+      await loadLiveNearbyHospitals(loc.lat, loc.lng, loc.district, loc.state);
+      setIsDetecting(false);
+      navigate('/results');
+    } catch (e) {
+      console.warn("Location detection failed:", e);
       setIsDetecting(false);
       navigate('/results');
     }
