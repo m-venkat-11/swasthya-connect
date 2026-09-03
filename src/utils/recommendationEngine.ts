@@ -69,16 +69,33 @@ export function rankFacilitiesForNeed(
   const userLat = userLocationCoords?.lat || districtCenter.lat;
   const userLng = userLocationCoords?.lng || districtCenter.lng;
 
-  // 1. Filter to matching district or entire state if none found
-  let districtFacilities = facilities.filter(f => f.district.toLowerCase() === district.toLowerCase());
-  if (districtFacilities.length === 0) {
-    districtFacilities = facilities.filter(f => f.state.toLowerCase() === (districtCenter.state || 'maharashtra').toLowerCase());
+  // 1. Identify Candidate Facilities:
+  // When live GPS is available, calculate actual distance to find facilities within radius
+  // (both Government and Private), so the system never purely depends on static excel rows.
+  let districtFacilities: Facility[] = [];
+  
+  if (userLocationCoords) {
+    const nearbyRadiusFacilities = facilities.filter(f => {
+      const coords = getFacilityCoordinates(f.id, f.district, f.lat, f.lng);
+      const dist = calculateHaversineKm(userLat, userLng, coords.lat, coords.lng);
+      return dist <= 50; // Within 50 km radius of live GPS
+    });
+
+    const districtMatches = facilities.filter(f => f.district.toLowerCase() === district.toLowerCase());
+    const map = new Map<string, Facility>();
+    [...nearbyRadiusFacilities, ...districtMatches].forEach(f => map.set(f.id, f));
+    districtFacilities = Array.from(map.values());
+  } else {
+    districtFacilities = facilities.filter(f => f.district.toLowerCase() === district.toLowerCase());
+    if (districtFacilities.length === 0) {
+      districtFacilities = facilities.filter(f => f.state.toLowerCase() === (districtCenter.state || 'maharashtra').toLowerCase());
+    }
   }
 
   // 2. Compute individual scores and metrics
   const scoredFacilities: FacilityRecommendation[] = districtFacilities.map(facility => {
-    const coords = getFacilityCoordinates(facility.id, facility.district);
-    const distanceKm = Math.max(calculateHaversineKm(userLat, userLng, coords.lat, coords.lng), 1.2);
+    const coords = getFacilityCoordinates(facility.id, facility.district, facility.lat, facility.lng);
+    const distanceKm = Math.max(calculateHaversineKm(userLat, userLng, coords.lat, coords.lng), 0.8);
     const estimatedTravelMinutes = estimateTravelMinutes(distanceKm);
 
     const hasMainService = facility.services.includes(needConfig.main);

@@ -15,6 +15,7 @@ import { TRANSLATIONS } from '../data/translations';
 import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
 import { authService } from '../services/authService';
 import { persistenceService } from '../services/persistenceService';
+import { liveHospitalService } from '../services/liveHospitalService';
 
 interface AppContextType {
   language: LanguageCode;
@@ -30,6 +31,7 @@ interface AppContextType {
   userCoords: { lat: number; lng: number } | null;
   setUserCoords: (coords: { lat: number; lng: number } | null) => void;
   isLiveGpsActive: boolean;
+  loadLiveNearbyHospitals: (lat: number, lng: number, district?: string, state?: string) => Promise<void>;
   t: (key: string) => string;
   updateFacilityAdmin: (facilityId: string, updates: Partial<Facility>) => void;
   resetMasterData: () => void;
@@ -282,6 +284,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openVoiceAssistant = () => setIsVoiceAssistantOpen(true);
   const closeVoiceAssistant = () => setIsVoiceAssistantOpen(false);
 
+  // Load live nearby facilities (Government & Private) from satellite GPS radar / OpenStreetMap
+  const loadLiveNearbyHospitals = useCallback(async (
+    lat: number, 
+    lng: number, 
+    district?: string, 
+    state?: string
+  ) => {
+    try {
+      const activeDist = district || selectedDistrict;
+      const activeSt = state || selectedState;
+      const liveList = await liveHospitalService.fetchLiveNearbyFacilities(lat, lng, activeDist, activeSt);
+      if (liveList && liveList.length > 0) {
+        setFacilities(prev => {
+          const map = new Map<string, Facility>();
+          prev.forEach(f => map.set(f.id, f));
+          liveList.forEach(f => map.set(f.id, f));
+          return Array.from(map.values());
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to load live nearby facilities:", e);
+    }
+  }, [selectedDistrict, selectedState]);
+
   // Auto-Geolocation
   const autoDetectLocation = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -311,6 +337,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem(STORAGE_KEY_DISTRICT, closestDistrict);
           localStorage.setItem(STORAGE_KEY_STATE, matchedState);
         }
+
+        // Dynamically load live Government and Private hospitals near the user GPS
+        loadLiveNearbyHospitals(latitude, longitude, closestDistrict || selectedDistrict, matchedState || selectedState);
       },
       (err) => {
         console.log("GPS not granted; using district default:", err.message);
@@ -318,7 +347,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
-  }, []);
+  }, [loadLiveNearbyHospitals, selectedDistrict, selectedState]);
 
   useEffect(() => {
     autoDetectLocation();
@@ -481,6 +510,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userCoords,
         setUserCoords,
         isLiveGpsActive,
+        loadLiveNearbyHospitals,
         t,
         updateFacilityAdmin,
         resetMasterData,

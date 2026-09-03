@@ -69,9 +69,19 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lng: number; st
 };
 
 /**
- * Calculates deterministic pseudo coordinates for a facility based on its ID and district center
+ * Calculates deterministic pseudo coordinates for a facility based on its ID and district center,
+ * or returns its exact GPS coordinates if available.
  */
-export function getFacilityCoordinates(facilityId: string, districtName: string): { lat: number; lng: number } {
+export function getFacilityCoordinates(
+  facilityId: string, 
+  districtName: string,
+  facilityLat?: number,
+  facilityLng?: number
+): { lat: number; lng: number } {
+  if (facilityLat && facilityLng && !isNaN(facilityLat) && !isNaN(facilityLng)) {
+    return { lat: facilityLat, lng: facilityLng };
+  }
+
   const center = DISTRICT_COORDINATES[districtName] || { lat: 19.7515, lng: 75.7139 }; // Maharashtra default center
   
   // Deterministic seed from ID (e.g. F0042 -> numeric hash)

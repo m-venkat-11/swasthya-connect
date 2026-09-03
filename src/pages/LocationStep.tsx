@@ -21,6 +21,7 @@ export const LocationStep: React.FC = () => {
     selectedDistrict, 
     setSelectedDistrict, 
     setUserCoords,
+    loadLiveNearbyHospitals,
     t 
   } = useApp();
   
@@ -51,23 +52,56 @@ export const LocationStep: React.FC = () => {
 
   const handleSimulateGPS = () => {
     setIsDetecting(true);
-    setTimeout(() => {
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          setIsDetecting(false);
+          const { latitude, longitude } = position.coords;
+          setUserCoords({ lat: latitude, lng: longitude });
+
+          // Determine closest district
+          let closest = selectedDistrict;
+          let closestState = selectedState;
+          let minD = Infinity;
+          for (const [name, data] of Object.entries(DISTRICT_COORDINATES)) {
+            const d = Math.hypot(latitude - data.lat, longitude - data.lng);
+            if (d < minD) {
+              minD = d;
+              closest = name;
+              closestState = data.state;
+            }
+          }
+          setSelectedDistrict(closest);
+          setSelectedState(closestState);
+          await loadLiveNearbyHospitals(latitude, longitude, closest, closestState);
+          navigate('/results');
+        },
+        async () => {
+          // If browser prompt is rejected or restricted, use realistic live coordinates
+          setIsDetecting(false);
+          const target = DISTRICT_COORDINATES[selectedDistrict] || DISTRICT_COORDINATES['Gadchiroli (Tribal Agency)'];
+          const simulatedLat = target.lat + 0.035;
+          const simulatedLng = target.lng - 0.025;
+          setUserCoords({ lat: simulatedLat, lng: simulatedLng });
+          await loadLiveNearbyHospitals(simulatedLat, simulatedLng, selectedDistrict, selectedState);
+          navigate('/results');
+        },
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    } else {
       setIsDetecting(false);
-      // Simulate rural location in Gadchiroli
-      const target = DISTRICT_COORDINATES['Gadchiroli (Tribal Agency)'];
-      setSelectedState('Maharashtra');
-      setSelectedDistrict('Gadchiroli (Tribal Agency)');
-      setUserCoords({ lat: target.lat + 0.04, lng: target.lng - 0.03 });
       navigate('/results');
-    }, 1200);
+    }
   };
 
-  const handleSelectDistrict = (districtName: string, stateName: string) => {
+  const handleSelectDistrict = async (districtName: string, stateName: string) => {
     setSelectedState(stateName);
     setSelectedDistrict(districtName);
     const coords = DISTRICT_COORDINATES[districtName];
     if (coords) {
       setUserCoords({ lat: coords.lat, lng: coords.lng });
+      await loadLiveNearbyHospitals(coords.lat, coords.lng, districtName, stateName);
     }
     navigate('/results');
   };
