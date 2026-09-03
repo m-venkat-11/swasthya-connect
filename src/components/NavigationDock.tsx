@@ -379,7 +379,7 @@ export const NavigationDock: React.FC = () => {
           }`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Home</span>
+          <span className="text-[10px] mt-0.5">{t('navHome')}</span>
         </Link>
 
         {/* 24x7 Emergency Quick Dialer */}
@@ -388,7 +388,7 @@ export const NavigationDock: React.FC = () => {
           className="flex flex-col items-center justify-center p-2 rounded-xl tap-target flex-1 bg-emergency-600 text-white font-bold shadow-md shadow-emergency-600/30 active:scale-95 transition-transform"
         >
           <PhoneCall className="w-5 h-5 animate-pulse" />
-          <span className="text-[10px] mt-0.5 font-extrabold uppercase tracking-tight">108 Help</span>
+          <span className="text-[10px] mt-0.5 font-extrabold uppercase tracking-tight">{t('nav108Help')}</span>
         </Link>
 
         {/* My Medical Card Profile (Link to full tab) */}
@@ -399,7 +399,7 @@ export const NavigationDock: React.FC = () => {
           }`}
         >
           <Heart className="w-5 h-5 text-rose-500" />
-          <span className="text-[10px] mt-0.5">My Pass</span>
+          <span className="text-[10px] mt-0.5">{t('navMyPass')}</span>
         </Link>
 
         {/* Location / GPS */}
@@ -410,7 +410,7 @@ export const NavigationDock: React.FC = () => {
           }`}
         >
           <MapPin className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">District</span>
+          <span className="text-[10px] mt-0.5 font-bold">{t('navDistrict')}</span>
         </Link>
 
         {/* Secret Admin / Settings Toggle */}
@@ -422,7 +422,7 @@ export const NavigationDock: React.FC = () => {
           className="flex flex-col items-center justify-center p-2 rounded-xl tap-target flex-1 text-slate-500 hover:text-slate-800"
         >
           {isAdminUnlocked ? <Settings className="w-5 h-5 text-teal-700" /> : <Lock className="w-5 h-5" />}
-          <span className="text-[10px] mt-0.5">{isAdminUnlocked ? 'Admin' : 'Lock'}</span>
+          <span className="text-[10px] mt-0.5">{isAdminUnlocked ? t('navAdmin') : t('navLock')}</span>
         </button>
 
       </nav>

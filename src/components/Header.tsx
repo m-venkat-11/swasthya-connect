@@ -20,7 +20,8 @@ export const Header: React.FC = () => {
     isLiveGpsActive,
     unlockAdmin,
     language,
-    setLanguage
+    setLanguage,
+    t
   } = useApp();
 
   const navigate = useNavigate();
@@ -105,9 +106,9 @@ export const Header: React.FC = () => {
                 
                 {/* Desktop subtitle */}
                 <p className="hidden md:flex text-[11px] font-bold uppercase tracking-widest text-teal-200/80 mt-1 items-center gap-1.5">
-                  <span>RURAL HEALTHCARE ACCESS ASSISTANT</span>
+                  <span>{t('ruralAssistantSubtitle')}</span>
                   <span className="text-teal-600">•</span>
-                  <span className="text-emerald-400">RIGHT CARE → RIGHT PLACE → RIGHT TIME</span>
+                  <span className="text-emerald-400">{t('subTagline')}</span>
                 </p>
               </div>
             </button>

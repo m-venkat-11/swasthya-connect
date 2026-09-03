@@ -178,7 +178,7 @@ export interface ScreeningTriageResult {
   duration: string;
   severity: 'mild' | 'moderate' | 'emergency';
   riskLevel: string;
-  recommendedLevel: 'Primary Health Centre (PHC)' | 'Community Health Centre (CHC)' | 'Sub-District / Civil Hospital (SDH/DH)';
+  recommendedLevel: string;
   recommendedServiceNeed: HealthNeedType;
   adviceSummary: string;
   isEmergency: boolean;

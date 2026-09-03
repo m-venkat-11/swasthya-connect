@@ -149,10 +149,10 @@ export const Home: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-2 font-medium">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>Location: <strong className="text-white font-bold">{selectedDistrict}</strong> ({selectedState})</span>
+              <span>{t('locationLabel')}: <strong className="text-white font-bold">{selectedDistrict}</strong> ({selectedState})</span>
               {isLiveGpsActive && (
                 <span className="bg-emerald-400/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-bold border border-emerald-400/30">
-                  Live GPS
+                  {t('liveGpsLabel')}
                 </span>
               )}
             </div>
@@ -161,7 +161,7 @@ export const Home: React.FC = () => {
               onClick={() => navigate('/location')}
               className="bg-white text-teal-950 hover:bg-teal-50 text-xs font-bold px-3 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1 shadow-sm"
             >
-              <span>Change</span>
+              <span>{t('changeBtn')}</span>
               <ArrowRight className="w-3 h-3" />
             </button>
 
@@ -170,7 +170,7 @@ export const Home: React.FC = () => {
               className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all tap-target flex items-center gap-1.5 shadow-sm ml-auto"
             >
               <Mic className="w-3.5 h-3.5" />
-              <span>Voice</span>
+              <span>{t('voiceBtn')}</span>
             </button>
           </div>
         </div>
@@ -183,10 +183,10 @@ export const Home: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[10px] sm:text-xs font-black text-teal-800 uppercase tracking-widest block">
-              PATIENT ACCESS & FIRST-RESPONSE
+              {t('patientAccessTitle')}
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-              How can we help you today?
+              {t('howCanWeHelp')}
             </h2>
           </div>
 
@@ -195,7 +195,7 @@ export const Home: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs border border-amber-300 shadow-2xs transition-colors"
           >
             <Mic className="w-3.5 h-3.5 text-amber-700" />
-            <span>Speak in Telugu / Hindi / EN</span>
+            <span>{t('speakVoicePill')}</span>
           </button>
         </div>
 
@@ -212,10 +212,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-rose-950">
-                I Don't Feel Well
+                {t('actFeelNotWellTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Symptom triaging & right care tier
+                {t('actFeelNotWellDesc')}
               </p>
             </div>
           </button>
@@ -230,10 +230,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-teal-950">
-                Find a Hospital
+                {t('actFindHospitalTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Nearby PHC, CHC & Civil Hospitals
+                {t('actFindHospitalDesc')}
               </p>
             </div>
           </button>
@@ -252,10 +252,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-blue-950">
-                Book Appointment
+                {t('actBookAppointmentTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                OPD, ANC & Doctor consultations
+                {t('actBookAppointmentDesc')}
               </p>
             </div>
           </button>
@@ -270,11 +270,11 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-emerald-950 flex items-center gap-1">
-                <span>Talk to a Doctor</span>
+                <span>{t('actTalkDoctorTitle')}</span>
                 <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 rounded">104</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Free government telemedicine advice
+                {t('actTalkDoctorDesc')}
               </p>
             </div>
           </button>
@@ -289,10 +289,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-amber-950">
-                My Referral
+                {t('actMyReferralTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Track primary to district transfers
+                {t('actMyReferralDesc')}
               </p>
             </div>
           </button>
@@ -307,10 +307,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-purple-950">
-                My Follow-Up
+                {t('actMyFollowUpTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Maternal ANC & vaccine reminders
+                {t('actMyFollowUpDesc')}
               </p>
             </div>
           </button>
@@ -325,10 +325,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-yellow-950 flex items-center gap-1">
-                <span>🎙 Ask by Voice</span>
+                <span>🎙 {t('actAskVoiceTitle')}</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Speech-guided triage in Telugu/EN
+                {t('actAskVoiceDesc')}
               </p>
             </div>
           </button>
@@ -343,10 +343,10 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 group-hover:text-indigo-950">
-                I'm Not Sure
+                {t('actNotSureTitle')}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Browse by clinical symptoms
+                {t('actNotSureDesc')}
               </p>
             </div>
           </button>
@@ -379,7 +379,7 @@ export const Home: React.FC = () => {
           onClick={() => navigate('/emergency')}
           className="w-full sm:w-auto bg-white hover:bg-rose-50 text-emergency-700 font-black text-xs sm:text-sm px-5 py-3 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 tap-target shrink-0 uppercase tracking-wider"
         >
-          <span>Open Emergency Mode</span>
+          <span>{t('openEmergencyMode')}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>
@@ -414,7 +414,7 @@ export const Home: React.FC = () => {
           onClick={() => navigate('/profile')}
           className="w-full sm:w-auto px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tap-target shrink-0"
         >
-          <span>{userProfile?.name ? 'View / Edit Health Pass' : 'Create My Health Card'}</span>
+          <span>{userProfile?.name ? t('viewEditHealthPass') : t('createHealthCard')}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>
@@ -435,7 +435,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="text-xs text-slate-500 font-medium">
-            Verified Public Facilities: <span className="font-bold text-teal-800">4,720+</span>
+            {t('verifiedPublicFacilities')}: <span className="font-bold text-teal-800">4,720+</span>
           </div>
         </div>
 
