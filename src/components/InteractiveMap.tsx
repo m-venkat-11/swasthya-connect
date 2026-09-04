@@ -65,7 +65,24 @@ const userLocationIcon = L.divIcon({
   iconSize: [22, 22], iconAnchor: [11, 11],
 });
 
-const MapViewAdjuster: React.FC<{ coords: [number, number]; zoom?: number }> = ({ coords, zoom = 12 }) => {
+// Auto-fit all markers into view using fitBounds
+const MapBoundsFitter: React.FC<{ recommendations: FacilityRecommendation[]; stores: MedicalStore[]; userCoords?: { lat: number; lng: number } | null }> = ({ recommendations, stores, userCoords }) => {
+  const map = useMap();
+  useEffect(() => {
+    const points: [number, number][] = [];
+    if (userCoords) points.push([userCoords.lat, userCoords.lng]);
+    recommendations.forEach(r => { if (r.facility.lat && r.facility.lng) points.push([r.facility.lat, r.facility.lng]); });
+    stores.forEach(s => { if (s.lat && s.lng) points.push([s.lat, s.lng]); });
+    if (points.length >= 2) {
+      try { map.fitBounds(points, { padding: [40, 40], maxZoom: 14 }); } catch { /* noop */ }
+    } else if (points.length === 1) {
+      map.setView(points[0], 14, { animate: true });
+    }
+  }, [map, recommendations, stores, userCoords]); // eslint-disable-line
+  return null;
+};
+
+const MapViewAdjuster: React.FC<{ coords: [number, number]; zoom?: number }> = ({ coords, zoom = 13 }) => {
   const map = useMap();
   useEffect(() => { map.setView(coords, zoom, { animate: true }); }, [coords, zoom, map]);
   return null;
@@ -92,6 +109,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const firstRec = recommendations.find(r => r.isRecommended) || recommendations[0];
   const centerLat = userCoords?.lat || firstRec?.facility.lat || 19.7515;
   const centerLng = userCoords?.lng || firstRec?.facility.lng || 75.7139;
+  // Zoom: 14 when GPS active (dense city view), 11 for wide district view
+  const defaultZoom = isLiveGps ? 14 : 11;
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-card" style={{ height }}>
@@ -106,12 +125,16 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         {isLiveGps && <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-600 inline-block border-2 border-white shadow"></span> Your Location</div>}
       </div>
 
-      <MapContainer center={[centerLat, centerLng]} zoom={12} scrollWheelZoom={true} className="w-full h-full">
+      <MapContainer center={[centerLat, centerLng]} zoom={defaultZoom} scrollWheelZoom={true} className="w-full h-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapViewAdjuster coords={[centerLat, centerLng]} zoom={isLiveGps ? 13 : 11} />
+        {/* When GPS active: set tight zoom on user location; else auto-fit all markers */}
+        {isLiveGps
+          ? <MapViewAdjuster coords={[centerLat, centerLng]} zoom={14} />
+          : <MapBoundsFitter recommendations={recommendations} stores={medicalStores} userCoords={userCoords} />
+        }
 
         {/* User location */}
         {userCoords && isLiveGps && (
