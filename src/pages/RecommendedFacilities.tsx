@@ -369,7 +369,7 @@ export const RecommendedFacilities: React.FC = () => {
             <div className="space-y-2">
               <InteractiveMap
                 recommendations={filteredRecommendations}
-                medicalStores={[]}
+                medicalStores={medicalStores}
                 userCoords={userCoords}
                 isLiveGps={isLiveGpsActive}
                 height="520px"

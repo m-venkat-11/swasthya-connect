@@ -33,7 +33,7 @@ export interface MedicalStore {
   lat?: number;
   lng?: number;
   distanceKm?: number;
-  data_source: 'Live OSM Maps' | 'Official Data';
+  data_source: string;
   isOpen24h?: boolean;
 }
 

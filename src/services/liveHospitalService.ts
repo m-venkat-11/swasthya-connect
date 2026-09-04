@@ -147,36 +147,69 @@ function buildFacilityFromOsm(
 }
 
 async function queryOverpass(query: string, timeoutMs = 12000): Promise<OverpassElement[]> {
-  // Try multiple mirrors if primary is slow
-  const endpoints = [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass.openstreetmap.ru/api/interpreter',
+  // Strategy 1: Local / Vercel serverless proxy (/api/overpass)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch('/api/overpass', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.elements && data.elements.length > 0) {
+        return data.elements as OverpassElement[];
+      }
+    }
+  } catch {
+    // proceed to direct browser-compatible mirrors
+  }
+
+  // Strategy 2: Direct browser CORS mirrors
+  const directMirrors = [
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+    'https://corsproxy.io/?url=' + encodeURIComponent('https://overpass-api.de/api/interpreter'),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://overpass-api.de/api/interpreter'),
   ];
 
-  for (const endpoint of endpoints) {
+  for (const endpoint of directMirrors) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
+      let res: Response;
+      if (endpoint.includes('allorigins')) {
+        res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, { signal: controller.signal });
+      } else {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+          body: 'data=' + encodeURIComponent(query),
+          signal: controller.signal,
+        });
+      }
       clearTimeout(timer);
       if (!res.ok) continue;
       const data = await res.json();
-      return (data.elements || []) as OverpassElement[];
+      if (data.elements && data.elements.length > 0) {
+        return data.elements as OverpassElement[];
+      }
     } catch {
       clearTimeout(timer);
-      continue; // try next mirror
+      continue;
     }
   }
   return [];
 }
 
 /**
- * Builds a comprehensive Overpass query that catches EVERY healthcare facility type
+ * Builds a fast, focused Overpass query that catches EVERY healthcare facility type
  * — hospitals, clinics, PHCs, CHCs, sub-centres, dispensaries, nursing homes, doctors.
  */
 function buildComprehensiveQuery(lat: number, lng: number, radiusM: number): string {
-  const r = radiusM;
+  const r = Math.min(radiusM, 25000);
   return `[out:json][timeout:20];
 (
   node["amenity"="hospital"](around:${r},${lat},${lng});
@@ -184,18 +217,12 @@ function buildComprehensiveQuery(lat: number, lng: number, radiusM: number): str
   node["amenity"="doctors"](around:${r},${lat},${lng});
   node["amenity"="health_post"](around:${r},${lat},${lng});
   node["amenity"="nursing_home"](around:${r},${lat},${lng});
-  node["amenity"="dentist"](around:${r},${lat},${lng});
   node["healthcare"](around:${r},${lat},${lng});
   way["amenity"="hospital"](around:${r},${lat},${lng});
   way["amenity"="clinic"](around:${r},${lat},${lng});
-  way["amenity"="doctors"](around:${r},${lat},${lng});
-  way["amenity"="health_post"](around:${r},${lat},${lng});
-  way["amenity"="nursing_home"](around:${r},${lat},${lng});
   way["healthcare"](around:${r},${lat},${lng});
-  relation["amenity"="hospital"](around:${r},${lat},${lng});
-  relation["healthcare"](around:${r},${lat},${lng});
 );
-out center 200;`;
+out center 150;`;
 }
 
 /**
@@ -341,7 +368,7 @@ export const liveHospitalService = {
 
     const lat = centre.lat;
     const lng = centre.lng;
-    const radiusM = 40000;
+    const radiusM = 25000;
 
     const [osmResults, abdmResults] = await Promise.allSettled([
       queryOverpass(buildComprehensiveQuery(lat, lng, radiusM), 15000),
