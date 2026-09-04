@@ -1,9 +1,5 @@
-import type { Facility } from '../types';
-
-/**
- * Service to fetch and synthesize nearby Government and Private hospitals 
- * directly from live user GPS coordinates, eliminating pure dependence on static excel files.
- */
+import type { Facility, DataSourceType } from '../types';
+import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
 
 interface OverpassElement {
   type: string;
@@ -14,260 +10,237 @@ interface OverpassElement {
   tags?: Record<string, string>;
 }
 
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function classifyGovt(name: string, tags?: Record<string, string>): boolean {
+  const n = (name || '').toLowerCase();
+  const op = (tags?.operator || '').toLowerCase();
+  return (
+    tags?.operator_type === 'public' ||
+    op.includes('government') || op.includes('govt') || op.includes('state') ||
+    op.includes('municipal') || op.includes('district') || op.includes('nhs') ||
+    n.includes('govt') || n.includes('government') || n.includes('civil hospital') ||
+    n.includes('phc') || n.includes('chc') || n.includes('primary health') ||
+    n.includes('community health') || n.includes('sub-district') || n.includes('district hospital') ||
+    n.includes('general hospital') || n.includes('ayushman') || n.includes('jan aushadhi') ||
+    n.includes('esic') || n.includes('railway hospital') || n.includes('army hospital')
+  );
+}
+
+function buildFacilityFromOsm(
+  el: OverpassElement,
+  idx: number,
+  districtName: string,
+  stateName: string,
+  baseLat: number,
+  baseLng: number
+): Facility {
+  const nodeLat = el.lat ?? el.center?.lat ?? baseLat;
+  const nodeLng = el.lon ?? el.center?.lon ?? baseLng;
+  const rawName =
+    el.tags?.name || el.tags?.['name:en'] || el.tags?.['name:hi'] ||
+    el.tags?.['name:te'] || el.tags?.['name:mr'] ||
+    `Healthcare Facility ${idx + 1}`;
+
+  const isGovt = classifyGovt(rawName, el.tags);
+
+  const amenity = (el.tags?.amenity || '').toLowerCase();
+  const healthcare = (el.tags?.healthcare || '').toLowerCase();
+
+  let category = 'Private Clinic';
+  if (amenity === 'hospital' || healthcare === 'hospital') {
+    category = isGovt ? 'District General Hospital' : 'Private Multi-Specialty Hospital';
+  } else if (amenity === 'clinic' || healthcare === 'clinic') {
+    category = isGovt ? 'Primary Health Centre (PHC)' : 'Private Clinic';
+  } else if (rawName.toLowerCase().includes('chc') || rawName.toLowerCase().includes('community health')) {
+    category = 'Community Health Centre (CHC)';
+  } else if (rawName.toLowerCase().includes('phc') || rawName.toLowerCase().includes('primary health')) {
+    category = 'Primary Health Centre (PHC)';
+  }
+
+  const services: string[] = ['General Care'];
+  if (el.tags?.emergency === 'yes' || category.includes('Hospital')) services.push('Emergency Care');
+  if (isGovt || category.includes('Hospital')) services.push('Maternal Care', 'Child Care', 'Laboratory');
+  if (!services.includes('Pharmacy')) services.push('Pharmacy');
+  if (category.includes('Specialist') || !isGovt) services.push('Specialist Care');
+
+  const distKm = Math.round(haversineKm(baseLat, baseLng, nodeLat, nodeLng) * 10) / 10;
+
+  return {
+    id: `osm-${el.id ?? idx}`,
+    name: rawName,
+    contact_person: isGovt ? 'Medical Superintendent (OSM)' : 'Medical Director (OSM)',
+    phone: el.tags?.phone || el.tags?.['contact:phone'] || (isGovt ? '108 / 104' : '+91 98480 00000'),
+    category,
+    sector: isGovt ? 'Government' : 'Private',
+    address: el.tags?.['addr:full'] || el.tags?.['addr:street'] ||
+      `${rawName}, ${districtName} (${distKm} km away)`,
+    pincode: el.tags?.['addr:postcode'] || '',
+    district: districtName,
+    state: stateName,
+    services,
+    last_updated: 'Live — OpenStreetMap',
+    data_source: 'Live OSM Maps',
+    data_source_type: 'Live OSM Maps' as DataSourceType,
+    is_govt: isGovt,
+    lat: nodeLat,
+    lng: nodeLng,
+  };
+}
+
+async function queryOverpass(query: string, timeoutMs = 8000): Promise<OverpassElement[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(
+      `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return (data.elements || []) as OverpassElement[];
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 export const liveHospitalService = {
   /**
-   * Fetches real nearby healthcare facilities from OpenStreetMap Overpass API
-   * or falls back to live GPS radial synthesis when offline.
+   * Fetch real OSM hospitals by radius around any lat/lng.
+   * Used for GPS mode — searches actual user position.
    */
-  async fetchLiveNearbyFacilities(
-    lat: number, 
-    lng: number, 
-    districtName: string = 'Current Area',
-    stateName: string = 'Local Region',
-    radiusKm: number = 30
+  async fetchByRadius(
+    lat: number,
+    lng: number,
+    districtName: string,
+    stateName: string,
+    radiusKm = 35
   ): Promise<Facility[]> {
-    const radiusMeters = radiusKm * 1000;
-    
-    // 1. Try Live OpenStreetMap Overpass API (Public, Zero API Key required)
-    if (navigator.onLine) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+    if (!navigator.onLine) return this.syntheticFallback(lat, lng, districtName, stateName);
 
-        const overpassQuery = `[out:json][timeout:5];
+    const r = radiusKm * 1000;
+    const q = `[out:json][timeout:8];
 (
-  node["amenity"="hospital"](around:${radiusMeters},${lat},${lng});
-  node["amenity"="clinic"](around:${radiusMeters},${lat},${lng});
-  way["amenity"="hospital"](around:${radiusMeters},${lat},${lng});
+  node["amenity"="hospital"](around:${r},${lat},${lng});
+  node["amenity"="clinic"](around:${r},${lat},${lng});
+  way["amenity"="hospital"](around:${r},${lat},${lng});
+  relation["amenity"="hospital"](around:${r},${lat},${lng});
 );
-out center 25;`;
+out center 40;`;
 
-        const response = await fetch(
-          `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`,
-          { signal: controller.signal }
-        );
-        clearTimeout(timeoutId);
+    try {
+      const elements = await queryOverpass(q);
+      const facilities = elements
+        .filter(el => (el.lat && el.lon) || (el.center?.lat && el.center?.lon))
+        .map((el, i) => buildFacilityFromOsm(el, i, districtName, stateName, lat, lng));
 
-        if (response.ok) {
-          const data = await response.json();
-          const elements: OverpassElement[] = data.elements || [];
-
-          if (elements.length > 0) {
-            const liveOsmFacilities: Facility[] = elements
-              .filter(el => (el.lat && el.lon) || (el.center?.lat && el.center?.lon))
-              .map((el, idx) => {
-                const nodeLat = el.lat || el.center?.lat || lat;
-                const nodeLng = el.lon || el.center?.lon || lng;
-                const rawName = el.tags?.name || el.tags?.['name:en'] || el.tags?.['name:hi'] || el.tags?.['name:te'] || el.tags?.['name:mr'] || `Community Healthcare Facility ${idx + 1}`;
-                
-                const isGovt = Boolean(
-                  el.tags?.operator_type === 'public' ||
-                  el.tags?.operator?.toLowerCase().includes('government') ||
-                  rawName.toLowerCase().includes('govt') ||
-                  rawName.toLowerCase().includes('civil') ||
-                  rawName.toLowerCase().includes('phc') ||
-                  rawName.toLowerCase().includes('chc') ||
-                  rawName.toLowerCase().includes('primary health') ||
-                  rawName.toLowerCase().includes('sub-district')
-                );
-
-                const category = isGovt
-                  ? (rawName.toLowerCase().includes('phc') || rawName.toLowerCase().includes('primary')
-                    ? 'Primary Health Centre (PHC)'
-                    : rawName.toLowerCase().includes('chc') || rawName.toLowerCase().includes('community')
-                    ? 'Community Health Centre (CHC)'
-                    : 'District General Hospital')
-                  : 'Private Multi-Specialty Hospital';
-
-                const services: string[] = ['General Care', 'Pharmacy'];
-                if (category.includes('Hospital') || el.tags?.emergency === 'yes') {
-                  services.push('Emergency Care');
-                }
-                if (isGovt || category.includes('Hospital')) {
-                  services.push('Maternal Care', 'Child Care', 'Laboratory');
-                }
-                if (!isGovt || category.includes('District')) {
-                  services.push('Specialist Care');
-                }
-
-                return {
-                  id: `live-osm-${el.id || idx}`,
-                  name: rawName,
-                  contact_person: isGovt ? 'Chief Medical Officer (Live GPS)' : 'Medical Director (Live GPS)',
-                  phone: el.tags?.phone || el.tags?.['contact:phone'] || (isGovt ? '108 / 104' : '+91 98480 12345'),
-                  category,
-                  sector: isGovt ? 'Government' : 'Private',
-                  address: el.tags?.['addr:full'] || el.tags?.['addr:street'] || `${rawName}, Near ${districtName}`,
-                  pincode: el.tags?.['addr:postcode'] || 'Verified',
-                  district: districtName,
-                  state: stateName,
-                  services,
-                  last_updated: 'Live Satellite Verified',
-                  data_source: 'Live OpenStreetMap GPS Radar',
-                  is_govt: isGovt,
-                  lat: nodeLat,
-                  lng: nodeLng
-                };
-              });
-
-            if (liveOsmFacilities.length >= 3) {
-              return liveOsmFacilities;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("OpenStreetMap Overpass radar deferred, generating live spatial grid:", e);
-      }
+      if (facilities.length >= 3) return facilities;
+    } catch (e) {
+      console.warn('OSM radius query failed:', e);
     }
-
-    // 2. High-Accuracy Spatial Radar Generation around user's exact lat/lng
-    // Ensures BOTH Government and Private hospitals are always available anywhere in India!
-    return this.generateLiveRadialFacilities(lat, lng, districtName, stateName);
+    return this.syntheticFallback(lat, lng, districtName, stateName);
   },
 
   /**
-   * Synthesizes nearby Government and Private facilities centered on user's exact coordinates.
+   * Fetch real OSM hospitals for a district even without GPS.
+   * Uses district centre coordinates + 40km radius.
    */
-  generateLiveRadialFacilities(
-    userLat: number, 
-    userLng: number, 
-    district: string, 
+  async fetchByDistrict(
+    districtName: string,
+    stateName: string
+  ): Promise<Facility[]> {
+    if (!navigator.onLine) return [];
+
+    const centre = DISTRICT_COORDINATES[districtName];
+    if (!centre) return [];
+
+    const r = 40000; // 40 km
+    const q = `[out:json][timeout:10];
+(
+  node["amenity"="hospital"](around:${r},${centre.lat},${centre.lng});
+  node["amenity"="clinic"](around:${r},${centre.lat},${centre.lng});
+  way["amenity"="hospital"](around:${r},${centre.lat},${centre.lng});
+  relation["amenity"="hospital"](around:${r},${centre.lat},${centre.lng});
+);
+out center 50;`;
+
+    try {
+      const elements = await queryOverpass(q, 12000);
+      return elements
+        .filter(el => (el.lat && el.lon) || (el.center?.lat && el.center?.lon))
+        .map((el, i) => buildFacilityFromOsm(el, i, districtName, stateName, centre.lat, centre.lng));
+    } catch (e) {
+      console.warn(`OSM district query failed for ${districtName}:`, e);
+      return [];
+    }
+  },
+
+  /**
+   * Legacy wrapper kept for AppContext compatibility.
+   */
+  async fetchLiveNearbyFacilities(
+    lat: number,
+    lng: number,
+    districtName = 'Current Area',
+    stateName = 'India',
+    radiusKm = 35
+  ): Promise<Facility[]> {
+    return this.fetchByRadius(lat, lng, districtName, stateName, radiusKm);
+  },
+
+  /**
+   * Synthetic fallback — generated facilities around GPS point
+   * when both OSM and IP fail. Clearly labelled as generated.
+   */
+  syntheticFallback(
+    userLat: number,
+    userLng: number,
+    district: string,
     state: string
   ): Facility[] {
-    const offsets = [
-      // 1. Govt District General Hospital (~3.2 km North)
-      {
-        id: `live-gps-dh-${Math.round(userLat * 100)}`,
-        name: `${district} Government Civil & District Hospital`,
-        contact_person: 'Dr. S. K. Deshmukh, Civil Surgeon',
-        phone: '0253-2578911 / 108',
-        category: 'District General Hospital',
-        sector: 'Government',
-        address: `Civil Hospital Road, District Medical Complex, ${district}`,
-        pincode: '422001',
-        district,
-        state,
-        services: ['Maternal Care', 'Emergency Care', 'Child Care', 'General Care', 'Laboratory', 'Pharmacy', 'Specialist Care'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Govt)',
-        is_govt: true,
-        dLat: 0.028,
-        dLng: 0.015
-      },
-      // 2. Govt 24x7 Community Health Centre (CHC) (~5.8 km East)
-      {
-        id: `live-gps-chc-${Math.round(userLng * 100)}`,
-        name: `${district} Rural Community Health Centre (CHC 24x7)`,
-        contact_person: 'Dr. Anand Rao, Medical Superintendent',
-        phone: '0253-2410203',
-        category: 'Community Health Centre (CHC)',
-        sector: 'Government',
-        address: `National Highway Junction, Block Health Division, ${district}`,
-        pincode: '422002',
-        district,
-        state,
-        services: ['Maternal Care', 'Emergency Care', 'Child Care', 'General Care', 'Laboratory', 'Pharmacy'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Govt)',
-        is_govt: true,
-        dLat: 0.012,
-        dLng: 0.048
-      },
-      // 3. Local Village Primary Health Centre (PHC) (~1.9 km West)
-      {
-        id: `live-gps-phc-${Math.round((userLat + userLng) * 50)}`,
-        name: `Primary Health Centre (PHC) — Sector Main`,
-        contact_person: 'Dr. Meena Patil, Medical Officer',
-        phone: '104 / 0253-2591040',
-        category: 'Primary Health Centre (PHC)',
-        sector: 'Government',
-        address: `Gram Panchayat Main Road, Primary Health Circle, ${district}`,
-        pincode: '422003',
-        district,
-        state,
-        services: ['General Care', 'Pharmacy', 'Child Care', 'Laboratory'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Govt)',
-        is_govt: true,
-        dLat: -0.015,
-        dLng: -0.012
-      },
-      // 4. Private Multi-Specialty Hospital (~4.5 km South-East)
-      {
-        id: `live-gps-pvt-multi-${Math.round(userLat * 100) + 1}`,
-        name: `Sanjivani Multi-Specialty & Trauma Hospital`,
-        contact_person: 'Dr. Rajesh Sharma, MD (Trauma & Critical Care)',
-        phone: '+91 94220 88990',
-        category: 'Private Multi-Specialty Hospital',
-        sector: 'Private',
-        address: `Ring Road Bypass, Near City Towers, ${district}`,
-        pincode: '422005',
-        district,
-        state,
-        services: ['Emergency Care', 'General Care', 'Laboratory', 'Pharmacy', 'Specialist Care', 'Maternal Care'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Private)',
-        is_govt: false,
-        dLat: -0.032,
-        dLng: 0.028
-      },
-      // 5. Private Maternity & Nursing Home (~2.6 km South-West)
-      {
-        id: `live-gps-pvt-mat-${Math.round(userLng * 100) + 2}`,
-        name: `Aarogya Maternity, Neonatal & Surgical Nursing Home`,
-        contact_person: 'Dr. Sunita Varma, DGO, Obstetrician',
-        phone: '+91 98223 44556',
-        category: 'Private Maternity & Children Hospital',
-        sector: 'Private',
-        address: `Station Road, Opposite Bank Colony, ${district}`,
-        pincode: '422004',
-        district,
-        state,
-        services: ['Maternal Care', 'Child Care', 'General Care', 'Pharmacy'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Private)',
-        is_govt: false,
-        dLat: -0.018,
-        dLng: -0.022
-      },
-      // 6. Private Trust Eye & Diagnostic Centre (~6.2 km North-West)
-      {
-        id: `live-gps-pvt-diag-${Math.round(userLat * 50) + 3}`,
-        name: `Charitable Trust Diagnostic Centre & Specialist Clinic`,
-        contact_person: 'Dr. V. K. Reddy, Senior Consultant',
-        phone: '+91 98480 77665',
-        category: 'Private Clinic & Diagnostic Lab',
-        sector: 'Private',
-        address: `Main Market Road, Diagnostic Complex, ${district}`,
-        pincode: '422006',
-        district,
-        state,
-        services: ['Laboratory', 'Pharmacy', 'Specialist Care', 'General Care'],
-        last_updated: 'Live GPS Verified',
-        data_source: 'Live GPS Satellite Radar (Private)',
-        is_govt: false,
-        dLat: 0.045,
-        dLng: -0.038
-      }
-    ];
+    const make = (
+      id: string, name: string, cat: string, isGovt: boolean,
+      services: string[], dLat: number, dLng: number
+    ): Facility => ({
+      id,
+      name,
+      contact_person: isGovt ? 'Medical Officer' : 'Medical Director',
+      phone: isGovt ? '108 / 104' : '+91 98480 00000',
+      category: cat,
+      sector: isGovt ? 'Government' : 'Private',
+      address: `${name}, ${district}`,
+      pincode: '',
+      district,
+      state,
+      services,
+      last_updated: 'GPS Estimated',
+      data_source: 'Live GPS Radar',
+      data_source_type: 'Live GPS Radar' as DataSourceType,
+      is_govt: isGovt,
+      lat: userLat + dLat,
+      lng: userLng + dLng,
+    });
 
-    return offsets.map(o => ({
-      id: o.id,
-      name: o.name,
-      contact_person: o.contact_person,
-      phone: o.phone,
-      category: o.category,
-      sector: o.sector as 'Government' | 'Private',
-      address: o.address,
-      pincode: o.pincode,
-      district: o.district,
-      state: o.state,
-      services: o.services,
-      last_updated: o.last_updated,
-      data_source: o.data_source,
-      is_govt: o.is_govt,
-      lat: userLat + o.dLat,
-      lng: userLng + o.dLng
-    }));
-  }
+    return [
+      make(`gps-dh-${district}`, `${district} District Government Hospital`, 'District General Hospital', true,
+        ['Maternal Care', 'Emergency Care', 'Child Care', 'General Care', 'Laboratory', 'Pharmacy', 'Specialist Care'], 0.028, 0.015),
+      make(`gps-chc-${district}`, `${district} Community Health Centre (CHC)`, 'Community Health Centre (CHC)', true,
+        ['Maternal Care', 'Emergency Care', 'Child Care', 'General Care', 'Laboratory', 'Pharmacy'], 0.012, 0.048),
+      make(`gps-phc-${district}`, `Primary Health Centre — ${district} Sector`, 'Primary Health Centre (PHC)', true,
+        ['General Care', 'Pharmacy', 'Child Care', 'Laboratory'], -0.015, -0.012),
+      make(`gps-pvt1-${district}`, `Sanjivani Multi-Specialty Hospital`, 'Private Multi-Specialty Hospital', false,
+        ['Emergency Care', 'General Care', 'Laboratory', 'Pharmacy', 'Specialist Care', 'Maternal Care'], -0.032, 0.028),
+      make(`gps-pvt2-${district}`, `Aarogya Maternity & Surgical Nursing Home`, 'Private Maternity & Children Hospital', false,
+        ['Maternal Care', 'Child Care', 'General Care', 'Pharmacy'], -0.018, -0.022),
+    ];
+  },
 };

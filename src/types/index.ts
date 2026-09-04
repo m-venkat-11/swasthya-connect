@@ -1,3 +1,5 @@
+export type DataSourceType = 'Official Excel DB' | 'Live OSM Maps' | 'OSM+Excel Verified' | 'Live GPS Radar';
+
 export interface Facility {
   id: string;
   name: string;
@@ -12,10 +14,29 @@ export interface Facility {
   services: string[];
   last_updated: string;
   data_source: string;
+  data_source_type?: DataSourceType;
   is_govt: boolean;
   lat?: number;
   lng?: number;
 }
+
+export interface MedicalStore {
+  id: string;
+  name: string;
+  storeType: 'govt' | 'chain' | 'local';
+  chainBrand?: string; // Apollo, MedPlus, Jan Aushadhi etc.
+  address: string;
+  phone?: string;
+  openHours?: string;
+  district: string;
+  state: string;
+  lat?: number;
+  lng?: number;
+  distanceKm?: number;
+  data_source: 'Live OSM Maps' | 'Official Data';
+  isOpen24h?: boolean;
+}
+
 
 export type HealthNeedType = 
   | 'emergency' 

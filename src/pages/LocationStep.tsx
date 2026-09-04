@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { DISTRICT_COORDINATES } from '../data/districtCoordinates';
@@ -30,6 +30,15 @@ export const LocationStep: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<string>('');
+
+  // ── When user lands on /location, always clear GPS mode ──
+  // This ensures selecting a district starts fresh without old GPS coords.
+  useEffect(() => {
+    setIsLiveGpsActive(false);
+    setUserCoords(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Extract unique districts per state
   const allDistricts = Object.keys(DISTRICT_COORDINATES).map(name => ({
@@ -54,8 +63,15 @@ export const LocationStep: React.FC = () => {
 
   const handleSimulateGPS = async () => {
     setIsDetecting(true);
+    setGpsError(null);
+    setGpsStatus('Requesting location...');
     try {
+      setGpsStatus('Trying device GPS (high accuracy)...');
       const loc = await liveLocationService.detectCurrentLocation();
+      const srcLabel = loc.source === 'DEVICE_GPS'
+        ? `Device GPS (±${loc.accuracy ?? '?'} m)`
+        : 'Network IP Geolocation';
+      setGpsStatus(`Detected via ${srcLabel}`);
       setSelectedState(loc.state);
       setSelectedDistrict(loc.district);
       setUserCoords({ lat: loc.lat, lng: loc.lng });
@@ -63,20 +79,20 @@ export const LocationStep: React.FC = () => {
       await loadLiveNearbyHospitals(loc.lat, loc.lng, loc.district, loc.state);
       setIsDetecting(false);
       navigate('/results');
-    } catch (e) {
-      console.warn("Location detection failed:", e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Location detection failed. Please select your district manually.';
+      setGpsError(msg);
+      setGpsStatus('');
       setIsDetecting(false);
-      navigate('/results');
     }
   };
 
   const handleSelectDistrict = (districtName: string, stateName: string) => {
+    // Manually selected district — clear GPS mode entirely
+    setIsLiveGpsActive(false);
+    setUserCoords(null);
     setSelectedState(stateName);
     setSelectedDistrict(districtName);
-    // Manual district selection browses official verified Excel dataset for that district
-    // Clear live GPS mode so it doesn't show fake GPS radar
-    setUserCoords(null);
-    setIsLiveGpsActive(false);
     navigate('/results');
   };
 
@@ -125,8 +141,18 @@ export const LocationStep: React.FC = () => {
               className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-black text-xs sm:text-sm px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 tap-target"
             >
               <Navigation className={`w-4 h-4 ${isDetecting ? 'animate-spin' : ''}`} />
-              <span>{isDetecting ? t('detectingLocation') : t('useGps')}</span>
+              <span>{isDetecting ? (gpsStatus || 'Detecting...') : t('useGps')}</span>
             </button>
+            {gpsError && (
+              <div className="text-xs text-rose-200 bg-rose-900/40 rounded-xl px-3 py-2 text-center max-w-xs">
+                ⚠️ {gpsError}
+              </div>
+            )}
+            {isDetecting && gpsStatus && !gpsError && (
+              <div className="text-xs text-emerald-200 bg-teal-900/30 rounded-xl px-3 py-2 text-center">
+                🛰️ {gpsStatus}
+              </div>
+            )}
             <span className="text-xs text-teal-200/80">
               Or pick your priority rural district below
             </span>

@@ -87,6 +87,30 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 {facility.is_govt ? t('govtBadge') : t('privateBadge')}
               </span>
 
+              {/* Data source badge */}
+              {(() => {
+                const src = facility.data_source_type || facility.data_source || '';
+                if (src.includes('OSM') || src.includes('Live')) {
+                  return (
+                    <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                      🗺️ Live OSM Maps
+                    </span>
+                  );
+                }
+                if (src.includes('GPS')) {
+                  return (
+                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                      📡 Live GPS Radar
+                    </span>
+                  );
+                }
+                return (
+                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-medium">
+                    📋 Official Excel DB
+                  </span>
+                );
+              })()}
+
               <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full">
                 {facility.category}
               </span>
@@ -97,6 +121,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 </span>
               )}
             </div>
+
 
             {/* Facility Name */}
             <h3 className="font-bold text-base sm:text-lg text-slate-900 leading-snug">

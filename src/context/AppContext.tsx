@@ -8,14 +8,15 @@ import type {
   UserAuth,
   MedicalAppointment,
   ReferralRecord,
-  FollowUpItem
+  FollowUpItem,
+  MedicalStore
 } from '../types';
 import seedData from '../data/facilities_seed.json';
 import { TRANSLATIONS } from '../data/translations';
 import { authService } from '../services/authService';
 import { persistenceService } from '../services/persistenceService';
 import { liveHospitalService } from '../services/liveHospitalService';
-import { liveLocationService } from '../services/liveLocationService';
+import { medicalStoreService } from '../services/medicalStoreService';
 
 interface AppContextType {
   language: LanguageCode;
@@ -33,6 +34,10 @@ interface AppContextType {
   isLiveGpsActive: boolean;
   setIsLiveGpsActive: (active: boolean) => void;
   loadLiveNearbyHospitals: (lat: number, lng: number, district?: string, state?: string) => Promise<void>;
+  loadOsmDistrictHospitals: (district: string, state: string) => Promise<void>;
+  medicalStores: MedicalStore[];
+  isLoadingStores: boolean;
+  loadMedicalStores: (district: string, state: string, lat?: number, lng?: number) => Promise<void>;
   t: (key: string) => string;
   updateFacilityAdmin: (facilityId: string, updates: Partial<Facility>) => void;
   resetMasterData: () => void;
@@ -108,6 +113,19 @@ const DEFAULT_EMPTY_PROFILE: UserMedicalProfile = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // ── ONE-TIME MIGRATION: clear stale GPS state from old auto-detect sessions ──
+  // Old code ran autoDetectLocation on every load and wrote coords/gps_active
+  // automatically, causing wrong district to appear. We stamp v2 to clear once.
+  (() => {
+    if (localStorage.getItem('swasthya_schema_v') !== '2') {
+      localStorage.removeItem('swasthya_user_coords');
+      localStorage.removeItem('swasthya_gps_active');
+      // Also clear district/state if it was written by the auto-detect (not by user)
+      // We detect this by checking if gps_active was true — meaning auto-detect set them
+      localStorage.setItem('swasthya_schema_v', '2');
+    }
+  })();
+
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     return (localStorage.getItem(STORAGE_KEY_LANG) as LanguageCode) || 'mr';
   });
@@ -121,8 +139,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [selectedNeed, setSelectedNeed] = useState<HealthNeedType>('maternity');
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isLiveGpsActive, setIsLiveGpsActive] = useState<boolean>(false);
+  const [userCoords, setUserCoordsState] = useState<{ lat: number; lng: number } | null>(() => {
+    try {
+      const saved = localStorage.getItem('swasthya_user_coords');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  const [isLiveGpsActive, setIsLiveGpsActiveState] = useState<boolean>(() => {
+    return localStorage.getItem('swasthya_gps_active') === 'true';
+  });
   const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
 
   // Sidebar expanded state synchronized across app
@@ -274,7 +299,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openVoiceAssistant = () => setIsVoiceAssistantOpen(true);
   const closeVoiceAssistant = () => setIsVoiceAssistantOpen(false);
 
-  // Load live nearby facilities (Government & Private) from satellite GPS radar / OpenStreetMap
+  // ── Medical Stores state ──
+  const [medicalStores, setMedicalStores] = useState<MedicalStore[]>([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(false);
+
+  const loadMedicalStores = useCallback(async (
+    district: string,
+    state: string,
+    lat?: number,
+    lng?: number
+  ) => {
+    setIsLoadingStores(true);
+    try {
+      let stores: MedicalStore[];
+      if (lat !== undefined && lng !== undefined) {
+        stores = await medicalStoreService.fetchStores(lat, lng, district, state, 12);
+      } else {
+        stores = await medicalStoreService.fetchByDistrict(district, state);
+      }
+      setMedicalStores(stores);
+    } catch (e) {
+      console.warn('Failed to load medical stores:', e);
+    } finally {
+      setIsLoadingStores(false);
+    }
+  }, []);
+
+  // Load OSM hospitals for currently selected district (no GPS needed)
+  const loadOsmDistrictHospitals = useCallback(async (district: string, state: string) => {
+    try {
+      const osmList = await liveHospitalService.fetchByDistrict(district, state);
+      if (osmList && osmList.length > 0) {
+        setFacilities(prev => {
+          const map = new Map<string, Facility>();
+          prev.forEach(f => map.set(f.id, f));
+          osmList.forEach(f => map.set(f.id, f));
+          return Array.from(map.values());
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to load OSM district hospitals:', e);
+    }
+  }, []);
+
+  // Load live nearby facilities (Government & Private) from GPS / OpenStreetMap
   const loadLiveNearbyHospitals = useCallback(async (
     lat: number, 
     lng: number, 
@@ -284,7 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const activeDist = district || selectedDistrict;
       const activeSt = state || selectedState;
-      const liveList = await liveHospitalService.fetchLiveNearbyFacilities(lat, lng, activeDist, activeSt);
+      const liveList = await liveHospitalService.fetchByRadius(lat, lng, activeDist, activeSt);
       if (liveList && liveList.length > 0) {
         setFacilities(prev => {
           const map = new Map<string, Facility>();
@@ -294,32 +362,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       }
     } catch (e) {
-      console.warn("Failed to load live nearby facilities:", e);
+      console.warn('Failed to load live nearby facilities:', e);
     }
   }, [selectedDistrict, selectedState]);
 
-  // Auto-Geolocation
-  const autoDetectLocation = useCallback(async () => {
-    try {
-      const loc = await liveLocationService.detectCurrentLocation();
-      if (loc) {
-        setUserCoords({ lat: loc.lat, lng: loc.lng });
-        setIsLiveGpsActive(true);
-        setSelectedDistrictState(loc.district);
-        setSelectedStateState(loc.state);
-        localStorage.setItem(STORAGE_KEY_DISTRICT, loc.district);
-        localStorage.setItem(STORAGE_KEY_STATE, loc.state);
-        loadLiveNearbyHospitals(loc.lat, loc.lng, loc.district, loc.state);
-      }
-    } catch (err) {
-      console.log("Auto-location detection skipped:", err);
-      setIsLiveGpsActive(false);
-    }
-  }, [loadLiveNearbyHospitals]);
-
-  useEffect(() => {
-    autoDetectLocation();
-  }, [autoDetectLocation]);
+  // NOTE: Auto-geolocation removed — location detection only happens when user
+  // explicitly clicks 'Use Current Location (GPS)' on the LocationStep page.
+  // This prevents overwriting manually selected districts.
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -347,6 +396,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setSelectedDistrict = (district: string) => {
     setSelectedDistrictState(district);
     localStorage.setItem(STORAGE_KEY_DISTRICT, district);
+  };
+
+  const setUserCoords = (coords: { lat: number; lng: number } | null) => {
+    setUserCoordsState(coords);
+    if (coords) {
+      localStorage.setItem('swasthya_user_coords', JSON.stringify(coords));
+    } else {
+      localStorage.removeItem('swasthya_user_coords');
+    }
+  };
+
+  const setIsLiveGpsActive = (active: boolean) => {
+    setIsLiveGpsActiveState(active);
+    if (active) {
+      localStorage.setItem('swasthya_gps_active', 'true');
+    } else {
+      localStorage.removeItem('swasthya_gps_active');
+    }
   };
 
   const t = (key: string): string => {
@@ -480,6 +547,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLiveGpsActive,
         setIsLiveGpsActive,
         loadLiveNearbyHospitals,
+        loadOsmDistrictHospitals,
+        medicalStores,
+        isLoadingStores,
+        loadMedicalStores,
         t,
         updateFacilityAdmin,
         resetMasterData,
